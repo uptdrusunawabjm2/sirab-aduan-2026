@@ -33,20 +33,37 @@ function norm(s){
   return String(s||"").toLowerCase().replace(/[^a-z]/g,"");
 }
 
+/* ===== FORMAT TANGGAL ONLY (AMAN UNTUK DATE OBJECT & STRING) ===== */
 function onlyDate(val){
   if(!val) return "-";
-  if(String(val).includes("T")) return String(val).split("T")[0];
+
+  // kalau Date object
+  if(Object.prototype.toString.call(val) === "[object Date]"){
+    return val.toISOString().split("T")[0];
+  }
+
+  val = String(val);
+
+  // kalau format ISO
+  if(val.includes("T")){
+    return val.split("T")[0];
+  }
+
+  // kalau format lain, biarkan
   return val;
 }
 
-/* ===== AMBIL NILAI KOLOM BERDASARKAN NAMA MIRIP ===== */
+function filled(v){
+  return v !== null && v !== undefined && String(v).trim() !== "";
+}
+
 function getVal(header,data,keyword){
   const key = norm(keyword);
   const idx = header.findIndex(h=>norm(h).includes(key));
-  return idx>-1 ? String(data[idx]||"").trim() : "";
+  return idx>-1 ? data[idx] : "";
 }
 
-/* ===== LOGIKA STATUS OTOMATIS (FINAL) ===== */
+/* ===== LOGIKA STATUS ===== */
 function getStatus(header,data){
 
   const pemeriksa = getVal(header,data,"pemeriksa");
@@ -57,15 +74,17 @@ function getStatus(header,data){
   const hasilPenanganan = getVal(header,data,"hasilpenanganan");
   const tglPenanganan = getVal(header,data,"tanggalpenanganan");
 
-  if(teknisi && hasilPenanganan && tglPenanganan){
-    return { label:"SELESAI", color:"green", progress:100 };
+  let status = { label:"PENDING", color:"red", progress:25 };
+
+  if(filled(pemeriksa) && filled(hasilPeriksa) && filled(tglPeriksa)){
+    status = { label:"DIPERIKSA", color:"yellow", progress:60 };
   }
 
-  if(pemeriksa && hasilPeriksa && tglPeriksa){
-    return { label:"DIPERIKSA", color:"yellow", progress:60 };
+  if(filled(teknisi) && filled(hasilPenanganan) && filled(tglPenanganan)){
+    status = { label:"SELESAI", color:"green", progress:100 };
   }
 
-  return { label:"PENDING", color:"red", progress:25 };
+  return status;
 }
 
 async function track(){
@@ -107,6 +126,8 @@ async function track(){
     if(HIDDEN_FIELDS.some(f => key.includes(f))) return;
 
     let val = d[i] || "-";
+
+    // 🔥 PAKSA TANGGAL SAJA
     if(key.includes("tanggalperiksa") || key.includes("tanggalpenanganan")){
       val = onlyDate(val);
     }

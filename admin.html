@@ -13,6 +13,7 @@
   <nav class="space-y-2">
     <button onclick="show('dash')" class="w-full text-left p-2 rounded bg-slate-800">Dashboard</button>
     <button onclick="show('data')" class="w-full text-left p-2 rounded hover:bg-slate-800">Data Aduan</button>
+    <button onclick="show('loket')" class="w-full text-left p-2 rounded hover:bg-slate-800">Mode Loket</button>
     <button onclick="logout()" class="w-full text-left p-2 rounded hover:bg-red-600 mt-10">Logout</button>
   </nav>
 </div>
@@ -38,6 +39,13 @@
   </div>
 </div>
 
+<!-- MODE LOKET -->
+<div id="loket" class="hidden">
+  <h1 class="text-2xl font-bold mb-4">Mode Layar Loket Pelayanan</h1>
+  <p class="text-slate-400 mb-3 text-sm">Tampilan ini cocok untuk monitor/TV. Auto refresh setiap 20 detik.</p>
+  <div id="loketList" class="grid md:grid-cols-3 gap-4"></div>
+</div>
+
 </div>
 
 <!-- MODAL -->
@@ -55,12 +63,20 @@
 <input id="mtglperiksa" type="date" class="p-2 bg-slate-800 rounded">
 <textarea id="mhasilperiksa" placeholder="Hasil Periksa" class="p-2 bg-slate-800 rounded md:col-span-2"></textarea>
 
-<input id="mteknisi" placeholder="Teknisi" class="p-2 bg-slate-800 rounded">
+<select id="mteknisi" class="p-2 bg-slate-800 rounded">
+  <option value="">-- Pilih Teknisi --</option>
+  <option>Rusidi</option>
+  <option>Jamil</option>
+  <option>Iwan</option>
+  <option>Ichsan</option>
+  <option>Ria</option>
+</select>
+
 <input id="mtglpenanganan" type="date" class="p-2 bg-slate-800 rounded">
 <textarea id="mhasilpenanganan" placeholder="Hasil Penanganan" class="p-2 bg-slate-800 rounded md:col-span-2"></textarea>
 </div>
 
-<textarea id="mcatatan" placeholder="Catatan tambahan"
+<textarea id="mcatatan" placeholder="Catatan tambahan (log otomatis akan ditambahkan)"
 class="w-full p-2 bg-slate-800 rounded"></textarea>
 
 <div class="flex justify-end gap-2">
@@ -81,6 +97,7 @@ let RAW=[], HEADER=[], CURRENT=[], CID="";
 function show(id){
   dash.classList.add("hidden");
   data.classList.add("hidden");
+  loket.classList.add("hidden");
   document.getElementById(id).classList.remove("hidden");
 }
 
@@ -111,6 +128,7 @@ async function load(){
   RAW=j.data; HEADER=j.header;
   buildCards();
   render();
+  buildLoket();
 }
 
 function buildCards(){
@@ -147,6 +165,20 @@ function render(){
   t.innerHTML=h;
 }
 
+function buildLoket(){
+  let html="";
+  RAW.forEach(r=>{
+    const [st,c]=getStatus(HEADER,r);
+    html+=`
+    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+      <div class="text-sm text-slate-400">ID: ${r[0]}</div>
+      <div class="font-bold text-lg">${r.join(" ").slice(0,60)}...</div>
+      <div class="mt-2 text-${c}-400 font-bold text-xl">${st}</div>
+    </div>`;
+  });
+  loketList.innerHTML=html;
+}
+
 function openModal(id){
   CID=id;
   CURRENT = RAW.find(r=>String(r[0])===String(id));
@@ -167,6 +199,10 @@ function openModal(id){
 }
 
 function save(){
+  const admin = sessionStorage.getItem("admin") || "ADMIN";
+  const waktu = new Date().toLocaleString("id-ID");
+  const log = `\n[${waktu}] Update oleh ${admin}: Pemeriksa=${mpemeriksa.value}, Teknisi=${mteknisi.value}`;
+
   fetch(API,{
     method:"POST",
     body:JSON.stringify({
@@ -174,11 +210,14 @@ function save(){
       key:KEY,
       id:CID,
       status:"",
-      catatan:mcatatan.value,
+      catatan:(mcatatan.value || "") + log,
       foto:""
     })
   }).then(()=>location.reload());
 }
+
+/* AUTO REFRESH MODE LOKET */
+setInterval(()=>{ if(!loket.classList.contains("hidden")) load(); },20000);
 
 load();
 </script>

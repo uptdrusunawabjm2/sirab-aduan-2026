@@ -3,59 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <title>Login Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 flex items-center justify-center min-h-screen text-white">
 
-<div class="bg-slate-900 p-8 rounded-xl w-full max-w-sm shadow-xl">
-  <h2 class="text-xl font-bold text-center mb-6">LOGIN ADMIN</h2>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+
+<div class="bg-slate-900 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-800">
+  <h1 class="text-xl font-bold text-center mb-6">LOGIN ADMIN</h1>
 
   <input id="user" type="text" placeholder="Username"
-    class="w-full p-3 mb-3 rounded bg-slate-800 outline-none">
+    class="w-full mb-3 px-4 py-2 rounded-lg bg-slate-800 outline-none">
 
   <input id="pass" type="password" placeholder="Password"
-    class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
+    class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-800 outline-none">
 
   <button onclick="login()"
-    class="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold">
+    class="w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg font-semibold">
     LOGIN
   </button>
 
-  <p id="msg" class="text-center text-red-400 mt-4 hidden"></p>
+  <p id="msg" class="text-center text-sm text-red-500 mt-4 hidden"></p>
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwhcgmRyNu9eILhBBoWJy_VLnq7AO7cntEpQsPGhtPrUdulAdkyKU-IVIIwa43u2HcLiQ/exec";
+const API = "https://script.google.com/macros/s/AKfycbwhcgmRyNu9eILhBBoWJy_VLnq7AO7cntEpQsPGhtPrUdulAdkyKU-IVIIwa43u2HcLiQ/exec";
 
 async function login(){
-  const msg = document.getElementById("msg");
+  const u = user.value.trim();
+  const p = pass.value.trim();
   msg.classList.add("hidden");
 
-  const fd = new FormData();
-  fd.append("action","login");
-  fd.append("username",document.getElementById("user").value);
-  fd.append("password",document.getElementById("pass").value);
+  if(!u || !p){
+    show("Username dan password wajib diisi");
+    return;
+  }
 
   try{
-    const res = await fetch(API_URL,{ method:"POST", body:fd });
+    const res = await fetch(`${API}?action=login&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`);
     const text = await res.text();
-    console.log("RAW RESPONSE:", text);
 
-    const json = JSON.parse(text);
-
-    if(json.success){
-      localStorage.setItem("admin_login","true");
-      location.href = "admin.html";
-    }else{
-      msg.innerText = json.error || "Login gagal";
-      msg.classList.remove("hidden");
+    let data;
+    try{
+      data = JSON.parse(text);
+    }catch{
+      console.error("Respon bukan JSON:", text);
+      show("API tidak mengirim JSON (cek URL Apps Script)");
+      return;
     }
 
-  }catch(e){
-    msg.innerText = "API tidak valid / bukan WebApp";
-    msg.classList.remove("hidden");
-    console.error(e);
+    if(data.success){
+      sessionStorage.setItem("ADMIN_LOGIN","1");
+      location.href = "admin.html";
+    }else{
+      show(data.error || "Login gagal");
+    }
+
+  }catch(err){
+    console.error(err);
+    show("Gagal terhubung ke server");
   }
+}
+
+function show(t){
+  msg.textContent = t;
+  msg.classList.remove("hidden");
 }
 </script>
 

@@ -4,229 +4,49 @@
 <meta charset="UTF-8">
 <title>Admin Pengaduan</title>
 <script src="https://cdn.tailwindcss.com"></script>
-
 <style>
 html,body{height:100%;margin:0}
-#sidebar{min-width:260px}
-.sidebar-collapsed{min-width:70px!important;width:70px!important}
-.sidebar-collapsed .label{display:none}
 thead th{position:sticky;top:0;background:#0f172a;z-index:10}
 </style>
 </head>
 
-<body class="bg-slate-950 text-white h-screen overflow-hidden">
-<div class="flex h-full">
+<body class="bg-slate-950 text-white p-6">
 
-<!-- SIDEBAR -->
-<aside id="sidebar" class="bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300">
+<h1 class="text-2xl font-bold mb-4">Dashboard Admin Pengaduan</h1>
 
-  <div class="flex items-center justify-between p-4 border-b border-slate-800">
-    <div class="font-bold text-lg whitespace-nowrap">🛠 <span class="label">Admin Pengaduan</span></div>
-    <button onclick="toggleSidebar()" class="text-xl">☰</button>
-  </div>
-
-  <nav class="flex-1 p-3 space-y-2">
-    <button onclick="show('dash')" class="w-full flex items-center gap-3 p-2 rounded bg-slate-800">
-      📊 <span class="label">Dashboard</span>
-    </button>
-    <button onclick="show('data')" class="w-full flex items-center gap-3 p-2 rounded hover:bg-slate-800">
-      📁 <span class="label">Data Aduan</span>
-    </button>
-  </nav>
-
-  <div class="p-3 border-t border-slate-800">
-    <button onclick="logout()" class="w-full flex items-center gap-3 p-2 rounded hover:bg-red-600">
-      🚪 <span class="label">Logout</span>
-    </button>
-  </div>
-</aside>
-
-<!-- MAIN -->
-<main class="flex-1 flex flex-col h-full overflow-hidden">
-
-<!-- DASHBOARD -->
-<section id="dash" class="flex-1 overflow-auto p-6">
-  <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
-  <div id="cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
-  <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-    <h2 class="font-bold mb-3">🕒 Aduan Terbaru</h2>
-    <div id="recentList" class="space-y-2 text-sm"></div>
-  </div>
-</section>
-
-<!-- DATA -->
-<section id="data" class="hidden flex-1 flex flex-col overflow-hidden">
-
-  <div class="p-6">
-    <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
-    <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
-      class="w-full p-3 rounded bg-slate-800 outline-none">
-  </div>
-
-  <div class="flex-1 px-6 pb-4 overflow-hidden">
-    <div class="h-full border border-slate-800 rounded-xl overflow-auto">
-      <table class="min-w-[1400px] w-full text-sm" id="t"></table>
-    </div>
-
-    <div class="flex justify-between items-center mt-3 text-sm text-slate-400">
-      <div id="pageInfo"></div>
-      <div class="space-x-2">
-        <button onclick="prevPage()" class="px-3 py-1 bg-slate-800 rounded">◀</button>
-        <button onclick="nextPage()" class="px-3 py-1 bg-slate-800 rounded">▶</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-</main>
-</div>
-
-<!-- MODAL -->
-<div id="modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-<div class="bg-slate-900 w-full max-w-2xl p-6 rounded-xl overflow-y-auto max-h-[90vh]">
-<h2 class="text-xl font-bold mb-4">Detail & Penanganan</h2>
-
-<input id="mpemeriksa" placeholder="Pemeriksa" class="w-full p-2 rounded bg-slate-800 mb-2">
-<input id="mtglperiksa" type="date" class="w-full p-2 rounded bg-slate-800 mb-2">
-<textarea id="mhasilperiksa" placeholder="Hasil Periksa" class="w-full p-2 rounded bg-slate-800 mb-3"></textarea>
-
-<select id="mteknisi" class="w-full p-2 rounded bg-slate-800 mb-2">
-<option value="">-- Pilih Teknisi --</option>
-<option>Rusidi</option><option>Jamil</option><option>Iwan</option><option>Ichsan</option><option>Ria</option>
-</select>
-
-<input id="mtglpenanganan" type="date" class="w-full p-2 rounded bg-slate-800 mb-2">
-<textarea id="mhasilpenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 mb-2"></textarea>
-
-<label class="text-sm">Upload Foto Hasil Penanganan</label>
-<input id="mfoto" type="file" accept="image/*" class="w-full p-2 bg-slate-800 rounded mb-3">
-
-<textarea id="mcatatan" placeholder="Catatan tambahan" class="w-full p-2 rounded bg-slate-800 mb-4"></textarea>
-
-<div class="flex justify-end gap-2">
-<button onclick="modal.classList.add('hidden')" class="px-4 py-2 bg-slate-700 rounded">Tutup</button>
-<button onclick="save()" class="px-4 py-2 bg-green-600 rounded">Simpan</button>
-</div>
-</div>
-</div>
+<table class="w-full border border-slate-800 text-sm">
+<thead>
+<tr id="thead" class="bg-slate-900"></tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 
 <script>
-if(!sessionStorage.getItem("admin")) location.href="login.html";
-
-const API="https://script.google.com/macros/s/AKfycbyFmS9G5xPYDyzL9l4-YCNbWgfLETiSkUlmOreWpbDYQmOXaz0wuMCEeoEZmm2-Kuvv/exec";
-const KEY="12345";
-const PER_PAGE=10;
-
-const HIDE_COL=["submission id","foto dokumentasi","submission ip","submission url","submission edit url","last update date","janji temu","pernyataan"];
-
-let RAW=[],HEADER=[],page=1,CID="";
-
-function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
-function show(id){dash.classList.add("hidden");data.classList.add("hidden");document.getElementById(id).classList.remove("hidden")}
-function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
-function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"")}
-function filled(v){return v&&String(v).trim()!==""}
-
-function getSubmissionId(row){
-  const idx = HEADER.findIndex(h => norm(h).includes("submissionid"));
-  return idx>-1 ? String(row[idx]).trim() : "";
+if(sessionStorage.getItem("login")!=="true"){
+  location.href="login.html";
 }
 
-function getStatus(h,d){
-const p=filled(d[h.findIndex(x=>norm(x).includes("pemeriksa"))]) &&
-         filled(d[h.findIndex(x=>norm(x).includes("hasilperiksa"))]) &&
-         filled(d[h.findIndex(x=>norm(x).includes("tanggalperiksa"))]);
-const s=filled(d[h.findIndex(x=>norm(x).includes("teknisi"))]) &&
-         filled(d[h.findIndex(x=>norm(x).includes("hasilpenanganan"))]) &&
-         filled(d[h.findIndex(x=>norm(x).includes("tanggalpenanganan"))]);
-if(s)return["SELESAI","green"]; if(p)return["DIPERIKSA","yellow"]; return["PENDING","red"];
-}
+const API = "https://script.google.com/macros/s/AKfycbyFmS9G5xPYDyzL9l4-YCNbWgfLETiSkUlmOreWpbDYQmOXaz0wuMCEeoEZmm2-Kuvv/exec";
+let headerGlobal = [];
 
 async function load(){
-const r=await fetch(`${API}?action=all&key=${KEY}`);
-const j=await r.json(); RAW=j.data; HEADER=j.header;
-buildCards(); buildRecent(); render();
-}
+  const r = await fetch(API);
+  const j = await r.json();
 
-function buildCards(){
-let p=0,d=0,s=0;
-RAW.forEach(r=>{const st=getStatus(HEADER,r)[0]; if(st=="SELESAI")s++; else if(st=="DIPERIKSA")d++; else p++;});
-cards.innerHTML=`
-<div class="bg-red-600/20 border border-red-600 rounded-xl p-5"><div>Pending</div><div class="text-3xl font-bold">${p}</div></div>
-<div class="bg-yellow-500/20 border border-yellow-500 rounded-xl p-5"><div>Diperiksa</div><div class="text-3xl font-bold">${d}</div></div>
-<div class="bg-green-600/20 border border-green-600 rounded-xl p-5"><div>Selesai</div><div class="text-3xl font-bold">${s}</div></div>`;
-}
+  headerGlobal = j.data[0].map(x=>x);
 
-function buildRecent(){
-recentList.innerHTML=[...RAW].slice(0,5).map(r=>`<div class="border border-slate-800 rounded p-2">${r.join(" ").slice(0,120)}...</div>`).join("");
-}
+  thead.innerHTML = headerGlobal.map(h=>`<th class="p-2 border">${h}</th>`).join("") + "<th>Aksi</th>";
 
-function render(){
-const key=norm(q.value);
-const filtered=RAW.filter(r=>!key||r.join(" ").toLowerCase().includes(key));
-const total=Math.ceil(filtered.length/PER_PAGE);
-if(page>total)page=total||1;
-const rows=filtered.slice((page-1)*PER_PAGE,page*PER_PAGE);
+  let html="";
+  j.data.slice(1).forEach(row=>{
+    html+="<tr>";
+    row.forEach(c=>{
+      html+=`<td class="border p-2">${c||""}</td>`;
+    });
+    html+=`<td class="border p-2 text-center">Edit di Sheet</td></tr>`;
+  });
 
-let h="<thead><tr>";
-HEADER.forEach(x=>{
-if(norm(x).includes("submissionid")) return;
-if(HIDE_COL.some(v=>norm(x).includes(v))) return;
-h+=`<th class='p-3'>${x}</th>`;
-});
-h+="<th>Status</th><th>Aksi</th></tr></thead><tbody>";
-
-rows.forEach(r=>{
-const sid=getSubmissionId(r);
-const[st,c]=getStatus(HEADER,r);
-h+="<tr class='border-b border-slate-800'>";
-r.forEach((x,i)=>{
-if(norm(HEADER[i]).includes("submissionid")) return;
-if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v))) return;
-h+=`<td class='p-3 align-top'>${x||""}</td>`;
-});
-h+=`<td class='p-3 font-bold text-${c}-400'>${st}</td>`;
-h+=`<td class='p-3'><button onclick="openModal('${sid}')" class="text-blue-400 underline">Kelola</button></td></tr>`;
-});
-t.innerHTML=h+"</tbody>";
-pageInfo.innerText=`Halaman ${page} dari ${total} (${filtered.length} data)`;
-}
-
-function nextPage(){page++;render()}
-function prevPage(){page--;if(page<1)page=1;render()}
-function openModal(id){CID=id; modal.classList.remove("hidden");}
-
-async function save(){
-try{
-let foto="";
-if(mfoto.files.length){
-const f=mfoto.files[0];
-const b64=await toBase64(f);
-const r=await fetch(API,{method:"POST",body:JSON.stringify({action:"upload",key:KEY,name:f.name,type:f.type,base64:b64.split(",")[1]})});
-const j=await r.json(); if(j.error) return alert(j.error); foto=j.url;
-}
-
-const res = await fetch(API,{method:"POST",body:JSON.stringify({
-action:"update",key:KEY,id:CID,
-pemeriksa:mpemeriksa.value,
-hasilPeriksa:mhasilperiksa.value,
-tglPeriksa:mtglperiksa.value,
-teknisi:mteknisi.value,
-hasilPenanganan:mhasilpenanganan.value,
-tglPenanganan:mtglpenanganan.value,
-catatan:mcatatan.value,
-fotoHasil:foto
-})});
-
-const out = await res.json();
-if(out.error) return alert("Gagal simpan: "+out.error);
-alert("✅ Data berhasil disimpan"); location.reload();
-
-}catch(err){ alert("ERROR: "+err); }
-}
-
-function toBase64(file){
-return new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=e=>rej(e); r.readAsDataURL(file);});
+  tbody.innerHTML = html;
 }
 
 load();

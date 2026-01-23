@@ -5,55 +5,67 @@
 <title>Admin Pengaduan</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-white min-h-screen p-6">
+<body class="bg-slate-950 text-white min-h-screen flex">
 
-<div class="flex justify-between items-center mb-6">
-  <h1 class="text-2xl font-bold">🛠 Dashboard Pengaduan</h1>
-  <div class="flex gap-2">
-    <select id="filter" onchange="render()" class="bg-slate-800 p-2 rounded">
-      <option value="">Semua Status</option>
-      <option value="pending">Pending</option>
-      <option value="diperiksa">Diperiksa</option>
-      <option value="selesai">Selesai</option>
-    </select>
-    <button onclick="window.print()" class="bg-blue-600 px-4 py-2 rounded">Export PDF</button>
+<!-- SIDEBAR -->
+<div class="w-64 bg-slate-900 border-r border-slate-800 p-4">
+  <h2 class="text-xl font-bold mb-6">🛠 Admin Pengaduan</h2>
+  <nav class="space-y-2">
+    <button onclick="show('dash')" class="w-full text-left p-2 rounded bg-slate-800">Dashboard</button>
+    <button onclick="show('data')" class="w-full text-left p-2 rounded hover:bg-slate-800">Data Aduan</button>
+    <button onclick="logout()" class="w-full text-left p-2 rounded hover:bg-red-600 mt-10">Logout</button>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<div class="flex-1 p-6 overflow-auto">
+
+<!-- DASHBOARD -->
+<div id="dash">
+  <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
+  <div id="cards" class="grid md:grid-cols-3 gap-4"></div>
+</div>
+
+<!-- DATA -->
+<div id="data" class="hidden">
+  <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
+
+  <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
+  class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
+
+  <div class="overflow-auto border border-slate-800 rounded-xl">
+    <table class="w-full text-sm" id="t"></table>
   </div>
 </div>
 
-<div id="cards" class="grid md:grid-cols-3 gap-4 mb-6"></div>
-
-<div class="overflow-auto rounded-xl border border-slate-800">
-<table class="w-full text-sm" id="t"></table>
 </div>
 
 <!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center">
-<div class="bg-slate-900 p-6 rounded-xl w-full max-w-xl space-y-3">
-<h2 class="text-xl font-bold mb-1">📄 Detail & Timeline</h2>
+<div class="bg-slate-900 p-6 rounded-xl w-full max-w-2xl space-y-3">
+<h2 class="text-xl font-bold">Detail & Penanganan</h2>
 <p id="mid" class="text-slate-400 text-sm"></p>
 
-<div id="timeline" class="space-y-2 text-sm"></div>
+<div id="timeline" class="text-sm space-y-1 mb-2"></div>
 
-<hr class="border-slate-700 my-2">
+<hr class="border-slate-700">
 
-<select id="mstatus" class="w-full p-2 rounded bg-slate-800">
-<option>Pending</option>
-<option>Diperiksa</option>
-<option>Selesai</option>
-</select>
+<div class="grid md:grid-cols-2 gap-3">
+<input id="mpemeriksa" placeholder="Pemeriksa" class="p-2 bg-slate-800 rounded">
+<input id="mtglperiksa" type="date" class="p-2 bg-slate-800 rounded">
+<textarea id="mhasilperiksa" placeholder="Hasil Periksa" class="p-2 bg-slate-800 rounded md:col-span-2"></textarea>
 
-<textarea id="mnote" placeholder="Catatan penanganan"
-class="w-full p-2 rounded bg-slate-800"></textarea>
+<input id="mteknisi" placeholder="Teknisi" class="p-2 bg-slate-800 rounded">
+<input id="mtglpenanganan" type="date" class="p-2 bg-slate-800 rounded">
+<textarea id="mhasilpenanganan" placeholder="Hasil Penanganan" class="p-2 bg-slate-800 rounded md:col-span-2"></textarea>
+</div>
 
-<input id="mfoto" placeholder="Link foto hasil (Drive)"
-class="w-full p-2 rounded bg-slate-800">
+<textarea id="mcatatan" placeholder="Catatan tambahan"
+class="w-full p-2 bg-slate-800 rounded"></textarea>
 
-<div class="flex justify-between pt-2">
-<button onclick="printCard()" class="px-4 py-2 bg-indigo-600 rounded">🖨 Cetak Kartu</button>
-<div class="flex gap-2">
+<div class="flex justify-end gap-2">
 <button onclick="modal.classList.add('hidden')" class="px-4 py-2 bg-slate-700 rounded">Tutup</button>
 <button onclick="save()" class="px-4 py-2 bg-green-600 rounded">Simpan</button>
-</div>
 </div>
 </div>
 </div>
@@ -64,64 +76,72 @@ if(!sessionStorage.getItem("admin")) location.href="login.html";
 const API = "https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
 const KEY = "12345";
 
-let RAW=[], HEADER=[], CURRENT_ROW=[], CID="";
+let RAW=[], HEADER=[], CURRENT=[], CID="";
 
-function val(h,d,name){
-  const i = h.findIndex(x=>x.toLowerCase().includes(name));
-  return i>-1 ? String(d[i]||"").trim() : "";
+function show(id){
+  dash.classList.add("hidden");
+  data.classList.add("hidden");
+  document.getElementById(id).classList.remove("hidden");
 }
 
-/* ===== STATUS OTOMATIS ===== */
+function logout(){
+  sessionStorage.removeItem("admin");
+  location.href="login.html";
+}
+
+function norm(s){ return String(s||"").toLowerCase(); }
+function filled(v){ return v && String(v).trim()!==""; }
+
+function getVal(h,d,k){
+  const i = h.findIndex(x=>norm(x).includes(k));
+  return i>-1 ? d[i] : "";
+}
+
 function getStatus(h,d){
-  const p = val(h,d,"pemeriksa") && val(h,d,"hasil periksa") && val(h,d,"tanggal periksa");
-  const s = val(h,d,"teknisi") && val(h,d,"hasil penanganan") && val(h,d,"tanggal penanganan");
-  if(s) return {t:"SELESAI",c:"green"};
-  if(p) return {t:"DIPERIKSA",c:"yellow"};
-  return {t:"PENDING",c:"red"};
-}
-
-function badge(st){
-  if(st.c=="green") return `<span class="px-2 py-1 rounded bg-green-600 text-xs">SELESAI</span>`;
-  if(st.c=="yellow") return `<span class="px-2 py-1 rounded bg-yellow-500 text-black text-xs">DIPERIKSA</span>`;
-  return `<span class="px-2 py-1 rounded bg-red-600 text-xs">PENDING</span>`;
+  const p = filled(getVal(h,d,"pemeriksa")) && filled(getVal(h,d,"hasil periksa")) && filled(getVal(h,d,"tanggal periksa"));
+  const s = filled(getVal(h,d,"teknisi")) && filled(getVal(h,d,"hasil penanganan")) && filled(getVal(h,d,"tanggal penanganan"));
+  if(s) return ["SELESAI","green"];
+  if(p) return ["DIPERIKSA","yellow"];
+  return ["PENDING","red"];
 }
 
 async function load(){
   const r = await fetch(`${API}?action=all&key=${KEY}`);
   const j = await r.json();
   RAW=j.data; HEADER=j.header;
-  renderCards(); render();
+  buildCards();
+  render();
 }
 
-function renderCards(){
+function buildCards(){
   let p=0,d=0,s=0;
   RAW.forEach(r=>{
-    const st=getStatus(HEADER,r).t;
+    const st=getStatus(HEADER,r)[0];
     if(st=="SELESAI") s++;
     else if(st=="DIPERIKSA") d++;
     else p++;
   });
 
   cards.innerHTML=`
-  <div class="bg-red-600/20 border border-red-600 p-4 rounded-xl">Pending<br><b class="text-2xl">${p}</b></div>
-  <div class="bg-yellow-500/20 border border-yellow-500 p-4 rounded-xl">Diperiksa<br><b class="text-2xl">${d}</b></div>
-  <div class="bg-green-600/20 border border-green-600 p-4 rounded-xl">Selesai<br><b class="text-2xl">${s}</b></div>`;
+  <div class="bg-red-600/20 border border-red-600 p-4 rounded-xl">Pending<br><b class="text-3xl">${p}</b></div>
+  <div class="bg-yellow-500/20 border border-yellow-500 p-4 rounded-xl">Diperiksa<br><b class="text-3xl">${d}</b></div>
+  <div class="bg-green-600/20 border border-green-600 p-4 rounded-xl">Selesai<br><b class="text-3xl">${s}</b></div>`;
 }
 
 function render(){
-  const f = filter.value;
+  const key = norm(q.value);
   let h="<tr class='bg-slate-800'>";
   HEADER.forEach(x=>h+=`<th class='p-2 text-left'>${x}</th>`);
   h+="<th>Status</th><th>Aksi</th></tr>";
 
   RAW.forEach(r=>{
-    const st=getStatus(HEADER,r);
-    if(f && !st.t.toLowerCase().includes(f)) return;
+    if(key && !r.join(" ").toLowerCase().includes(key)) return;
+    const [st,c]=getStatus(HEADER,r);
 
     h+="<tr class='border-b border-slate-800 hover:bg-slate-900'>";
     r.forEach(x=>h+=`<td class='p-2'>${x||""}</td>`);
-    h+=`<td class='p-2'>${badge(st)}</td>`;
-    h+=`<td class='p-2'><button onclick='openModal("${r[0]}")' class='text-blue-400'>Detail</button></td></tr>`;
+    h+=`<td class='p-2 text-${c}-400 font-bold'>${st}</td>`;
+    h+=`<td class='p-2'><button onclick='openModal("${r[0]}")' class='text-blue-400'>Kelola</button></td></tr>`;
   });
 
   t.innerHTML=h;
@@ -129,23 +149,21 @@ function render(){
 
 function openModal(id){
   CID=id;
-  CURRENT_ROW = RAW.find(r=>String(r[0])===String(id));
+  CURRENT = RAW.find(r=>String(r[0])===String(id));
   mid.innerText="Submission ID: "+id;
-  buildTimeline();
+
+  mpemeriksa.value = getVal(HEADER,CURRENT,"pemeriksa");
+  mhasilperiksa.value = getVal(HEADER,CURRENT,"hasil periksa");
+  mteknisi.value = getVal(HEADER,CURRENT,"teknisi");
+  mhasilpenanganan.value = getVal(HEADER,CURRENT,"hasil penanganan");
+  mcatatan.value = getVal(HEADER,CURRENT,"catatan");
+
+  timeline.innerHTML = `
+  ${filled(mpemeriksa.value) ? "🟡 Diperiksa" : "⚪ Belum diperiksa"}<br>
+  ${filled(mteknisi.value) ? "🟢 Ditangani / Selesai" : "⚪ Belum ditangani"}
+  `;
+
   modal.classList.remove("hidden");
-}
-
-function buildTimeline(){
-  const masuk = true;
-  const diperiksa = val(HEADER,CURRENT_ROW,"pemeriksa") && val(HEADER,CURRENT_ROW,"hasil periksa");
-  const ditangani = val(HEADER,CURRENT_ROW,"teknisi") && val(HEADER,CURRENT_ROW,"hasil penanganan");
-  const selesai = ditangani;
-
-  timeline.innerHTML=`
-  <div class="${masuk?'text-green-400':'text-slate-500'}">● Laporan Masuk</div>
-  <div class="${diperiksa?'text-yellow-400':'text-slate-500'}">● Diperiksa</div>
-  <div class="${ditangani?'text-blue-400':'text-slate-500'}">● Ditangani</div>
-  <div class="${selesai?'text-green-400':'text-slate-500'}">● Selesai</div>`;
 }
 
 function save(){
@@ -155,17 +173,11 @@ function save(){
       action:"update",
       key:KEY,
       id:CID,
-      status:mstatus.value,
-      catatan:mnote.value,
-      foto:mfoto.value
+      status:"",
+      catatan:mcatatan.value,
+      foto:""
     })
   }).then(()=>location.reload());
-}
-
-/* ===== CETAK KARTU ===== */
-function printCard(){
-  sessionStorage.setItem("printData",JSON.stringify({header:HEADER,data:CURRENT_ROW}));
-  window.open("print.html","_blank");
 }
 
 load();

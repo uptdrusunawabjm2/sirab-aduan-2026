@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Tracking Pengaduan</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center">
+
+<div class="bg-slate-900 p-8 rounded-xl w-full max-w-xl shadow">
+<h1 class="text-2xl font-bold mb-4 text-center">Tracking Pengaduan</h1>
+
+<input id="tid" placeholder="Masukkan Submission ID"
+class="w-full p-3 rounded bg-slate-800 mb-4">
+
+<button onclick="track()" class="w-full bg-blue-600 p-3 rounded font-bold">
+CEK STATUS
+</button>
+
+<div id="res" class="mt-6 text-sm"></div>
+</div>
+
+<script>
+const API = "ISI_URL_APPS_SCRIPT";
+
+async function track(){
+  const id = document.getElementById("tid").value.trim();
+  const r = await fetch(`${API}?track=${id}`);
+  const j = await r.json();
+
+  if(!j.found){
+    res.innerHTML = "<p class='text-red-400'>Data tidak ditemukan</p>";
+    return;
+  }
+
+  const h = j.header;
+  const d = j.data;
+  let html = "<div class='space-y-2'>";
+  h.forEach((x,i)=> html += `<div><b>${x}:</b> ${d[i]||"-"}</div>`);
+  html += "</div>";
+
+  res.innerHTML = html;
+}
+</script>
+</body>
+</html>

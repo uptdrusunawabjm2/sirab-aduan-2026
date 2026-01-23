@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Login Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white flex items-center justify-center min-h-screen">
+
+<div class="bg-slate-900 p-8 rounded-xl w-96">
+<h2 class="text-xl font-bold mb-4 text-center">LOGIN ADMIN</h2>
+
+<input id="u" placeholder="Username" class="w-full p-2 mb-3 rounded bg-slate-800">
+<input id="p" type="password" placeholder="Password" class="w-full p-2 mb-3 rounded bg-slate-800">
+
+<button onclick="login()" class="w-full bg-green-600 p-2 rounded font-bold">LOGIN</button>
+<p id="msg" class="mt-3 text-sm"></p>
+</div>
+
+<script>
+const API = "ISI_URL_APPS_SCRIPT";
+
+async function login(){
+  const r = await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"login",
+      username:u.value,
+      password:p.value
+    })
+  });
+  const j = await r.json();
+  if(j.success){
+    sessionStorage.setItem("admin","1");
+    location.href="admin.html";
+  }else{
+    msg.innerHTML="Login gagal";
+  }
+}
+</script>
+</body>
+</html>

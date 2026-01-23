@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Form Pengaduan Rusunawa</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white p-4 max-w-xl mx-auto">
+
+<h1 class="text-2xl font-bold mb-4 text-center">FORM PENGADUAN RUSUNAWA</h1>
+
+<form id="f" class="space-y-3">
+<input id="rusun" placeholder="Nama Rusunawa" required class="w-full p-2 rounded bg-slate-800">
+<input id="nama" placeholder="Nama Lengkap" required class="w-full p-2 rounded bg-slate-800">
+<input id="unit" placeholder="Nomor Unit" required class="w-full p-2 rounded bg-slate-800">
+<input id="hp" placeholder="No HP" required class="w-full p-2 rounded bg-slate-800">
+<textarea id="isi" placeholder="Isi Pengaduan" required class="w-full p-2 rounded bg-slate-800"></textarea>
+
+<label>Foto (kamera HP bisa langsung)</label>
+<input id="foto" type="file" accept="image/*" capture="environment">
+
+<button class="w-full bg-blue-600 p-2 rounded font-bold">KIRIM PENGADUAN</button>
+<p id="msg" class="text-center mt-2"></p>
+</form>
+
+<script>
+const API="ISI_URL_WEBAPP_ANDA";
+
+function genTicket(){
+  const d=new Date();
+  return "ADU-"+d.getFullYear()+""+(d.getMonth()+1)+""+d.getDate()+"-"+d.getHours()+""+d.getMinutes()+""+d.getSeconds();
+}
+
+f.onsubmit = async e => {
+  e.preventDefault();
+  msg.innerText="Upload foto...";
+
+  let fotoLink="";
+  if(foto.files.length){
+    let file=foto.files[0];
+    let base64 = await toBase64(file);
+    let up = await fetch(API,{method:"POST",body:JSON.stringify({
+      action:"upload",
+      base64: base64.split(",")[1],
+      type:file.type,
+      name:file.name
+    })});
+    let res = await up.json();
+    fotoLink = res.link;
+  }
+
+  let ticket = genTicket();
+  msg.innerText="Mengirim aduan...";
+
+  let send = await fetch(API,{method:"POST",body:JSON.stringify({
+    action:"add",
+    ticket: ticket,
+    rusun:rusun.value,
+    nama:nama.value,
+    unit:unit.value,
+    isi:isi.value,
+    hp:hp.value,
+    foto:fotoLink
+  })});
+
+  let j = await send.json();
+  msg.innerHTML = `✅ Pengaduan terkirim<br>Nomor Tiket: <b class="text-green-400">${j.ticket}</b>`;
+  f.reset();
+}
+
+function toBase64(file){
+  return new Promise((res,rej)=>{
+    let r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.onerror=e=>rej(e);
+    r.readAsDataURL(file);
+  });
+}
+</script>
+</body>
+</html>

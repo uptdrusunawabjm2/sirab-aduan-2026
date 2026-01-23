@@ -11,7 +11,7 @@
 </style>
 </head>
 
-<body class="bg-slate-950 text-white min-h-screen flex overflow-hidden">
+<body class="bg-slate-950 text-white min-h-screen flex">
 
 <!-- SIDEBAR -->
 <div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 p-4 transition-all duration-300 flex flex-col">
@@ -25,12 +25,11 @@
     <button onclick="show('data')" class="w-full text-left p-2 rounded hover:bg-slate-800"><span>Data Aduan</span></button>
   </nav>
 
-  <!-- LOGOUT PALING BAWAH -->
   <button onclick="logout()" class="w-full text-left p-2 rounded hover:bg-red-600 mt-6"><span>Logout</span></button>
 </div>
 
 <!-- MAIN -->
-<div id="main" class="flex-1 p-6 overflow-hidden flex flex-col">
+<div id="main" class="flex-1 p-6 overflow-auto">
 
 <!-- DASHBOARD -->
 <div id="dash">
@@ -44,14 +43,14 @@
 </div>
 
 <!-- DATA -->
-<div id="data" class="hidden flex-1 flex flex-col overflow-hidden">
+<div id="data" class="hidden">
   <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
 
   <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
   class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
 
-  <!-- AREA TABEL SCROLL -->
-  <div class="border border-slate-800 rounded-xl overflow-auto flex-1">
+  <!-- AREA SCROLL -->
+  <div class="border border-slate-800 rounded-xl overflow-auto" style="max-height:65vh">
     <table class="w-full text-sm" id="t"></table>
   </div>
 
@@ -65,6 +64,30 @@
   </div>
 </div>
 
+<!-- MODAL KELOLA -->
+<div id="modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+<div class="bg-slate-900 w-full max-w-2xl p-6 rounded-xl">
+<h2 class="text-xl font-bold mb-4">Detail & Penanganan</h2>
+
+<input id="mpemeriksa" placeholder="Pemeriksa" class="w-full p-2 rounded bg-slate-800 mb-2">
+<input id="mtglperiksa" type="date" class="w-full p-2 rounded bg-slate-800 mb-2">
+<textarea id="mhasilperiksa" placeholder="Hasil Periksa" class="w-full p-2 rounded bg-slate-800 mb-2"></textarea>
+
+<select id="mteknisi" class="w-full p-2 rounded bg-slate-800 mb-2">
+<option value="">-- Pilih Teknisi --</option>
+<option>Rusidi</option><option>Jamil</option><option>Iwan</option><option>Ichsan</option><option>Ria</option>
+</select>
+
+<input id="mtglpenanganan" type="date" class="w-full p-2 rounded bg-slate-800 mb-2">
+<textarea id="mhasilpenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 mb-2"></textarea>
+
+<textarea id="mcatatan" placeholder="Catatan tambahan" class="w-full p-2 rounded bg-slate-800 mb-4"></textarea>
+
+<div class="flex justify-end gap-2">
+<button onclick="modal.classList.add('hidden')" class="px-4 py-2 bg-slate-700 rounded">Tutup</button>
+<button onclick="save()" class="px-4 py-2 bg-green-600 rounded">Simpan</button>
+</div>
+</div>
 </div>
 
 <script>
@@ -79,77 +102,68 @@ const HIDE_COL=[
 "last update date","submission id","janji temu","pernyataan"
 ];
 
-let RAW=[],HEADER=[],page=1;
+let RAW=[],HEADER=[],page=1,CID="";
 
-/* SIDEBAR */
+/* ===== SIDEBAR ===== */
 function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
-function show(id){
-dash.classList.add("hidden");data.classList.add("hidden");
-document.getElementById(id).classList.remove("hidden");
-}
+function show(id){dash.classList.add("hidden");data.classList.add("hidden");document.getElementById(id).classList.remove("hidden")}
 function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
 
-/* UTIL */
+/* ===== UTIL ===== */
 function norm(s){return String(s||"").toLowerCase()}
 function filled(v){return v&&String(v).trim()!==""}
 function getVal(h,d,k){const i=h.findIndex(x=>norm(x).includes(k));return i>-1?d[i]:""}
 function getDate(h,r){const i=h.findIndex(x=>norm(x).includes("submission date"));return i>-1?new Date(r[i]):null}
 function daysOld(r){const d=getDate(HEADER,r);return d?((new Date()-d)/86400000):0}
 
-/* STATUS */
+/* ===== STATUS ===== */
 function getStatus(h,d){
 const p=filled(getVal(h,d,"pemeriksa"))&&filled(getVal(h,d,"hasil periksa"))&&filled(getVal(h,d,"tanggal periksa"));
 const s=filled(getVal(h,d,"teknisi"))&&filled(getVal(h,d,"hasil penanganan"))&&filled(getVal(h,d,"tanggal penanganan"));
 if(s)return["SELESAI","green"];if(p)return["DIPERIKSA","yellow"];return["PENDING","red"];
 }
 
-/* LOAD */
+/* ===== LOAD ===== */
 async function load(){
 const r=await fetch(`${API}?action=all&key=${KEY}`);
 const j=await r.json();RAW=j.data;HEADER=j.header;
 buildCards();buildRecent();render();
 }
 
-/* DASHBOARD */
+/* ===== DASHBOARD ===== */
 function buildCards(){
 let p=0,d=0,s=0;
 RAW.forEach(r=>{const st=getStatus(HEADER,r)[0];if(st=="SELESAI")s++;else if(st=="DIPERIKSA")d++;else p++});
 cards.innerHTML=`
-<div class="bg-red-600/20 border border-red-600 rounded-2xl p-6 h-32 flex flex-col justify-between"><div>Pending</div><div class="text-4xl font-bold">${p}</div></div>
-<div class="bg-yellow-500/20 border border-yellow-500 rounded-2xl p-6 h-32 flex flex-col justify-between"><div>Diperiksa</div><div class="text-4xl font-bold">${d}</div></div>
-<div class="bg-green-600/20 border border-green-600 rounded-2xl p-6 h-32 flex flex-col justify-between"><div>Selesai</div><div class="text-4xl font-bold">${s}</div></div>`;
+<div class="bg-red-600/20 border border-red-600 rounded-2xl p-6"><div>Pending</div><div class="text-3xl font-bold">${p}</div></div>
+<div class="bg-yellow-500/20 border border-yellow-500 rounded-2xl p-6"><div>Diperiksa</div><div class="text-3xl font-bold">${d}</div></div>
+<div class="bg-green-600/20 border border-green-600 rounded-2xl p-6"><div>Selesai</div><div class="text-3xl font-bold">${s}</div></div>`;
 }
 
-/* TERBARU */
 function buildRecent(){
 const list=[...RAW].sort((a,b)=>getDate(HEADER,b)-getDate(HEADER,a)).slice(0,5);
-recentList.innerHTML=list.map(r=>{
-const d=getDate(HEADER,r);
-return `<div class="border border-slate-800 rounded-xl p-3 hover:bg-slate-800">
-<div class="text-xs text-slate-400">${d?d.toLocaleDateString("id-ID"):"-"}</div>
-<div class="font-semibold">${r.join(" ").slice(0,80)}...</div></div>`;
-}).join("");
+recentList.innerHTML=list.map(r=>`<div class="border border-slate-800 rounded-xl p-3">${r.join(" ").slice(0,90)}...</div>`).join("");
 }
 
-/* TABLE + PAGINATION + BADGE */
+/* ===== TABLE ===== */
 function render(){
 const key=norm(q.value);
 const filtered=RAW.filter(r=>!key||r.join(" ").toLowerCase().includes(key));
 const total=Math.ceil(filtered.length/PER_PAGE);
 if(page>total)page=total||1;
-const start=(page-1)*PER_PAGE;
-const rows=filtered.slice(start,start+PER_PAGE);
+const rows=filtered.slice((page-1)*PER_PAGE,page*PER_PAGE);
 
 let h="<tr class='bg-slate-800'>";
 HEADER.forEach(x=>{if(HIDE_COL.some(v=>norm(x).includes(v)))return;h+=`<th class='p-3 text-left'>${x}</th>`});
-h+="<th>Status</th></tr>";
+h+="<th>Status</th><th>Aksi</th></tr>";
 
 rows.forEach(r=>{
 const[st,c]=getStatus(HEADER,r);
 const old=daysOld(r)>3 && st!=="SELESAI";
-h+=`<tr class='border-b border-slate-800 hover:bg-slate-900 ${old?"bg-red-950/40":""}'>`;
+h+=`<tr class='border-b border-slate-800 ${old?"bg-red-950/40":""}'>`;
 r.forEach((x,i)=>{if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v)))return;h+=`<td class='p-3'>${x||""}</td>`});
-h+=`<td class='p-3 font-bold text-${c}-400'>${st} ${old?'<span class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">TERLAMBAT</span>':""}</td></tr>`;
+h+=`<td class='p-3 text-${c}-400 font-bold'>${st} ${old?'<span class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">TERLAMBAT</span>':""}</td>`;
+h+=`<td class='p-3'><button onclick="openModal('${r[0]}')" class="text-blue-400">Kelola</button></td></tr>`;
 });
 
 t.innerHTML=h;
@@ -158,6 +172,22 @@ pageInfo.innerText=`Halaman ${page} dari ${total} (${filtered.length} data)`;
 
 function nextPage(){page++;render()}
 function prevPage(){page--;if(page<1)page=1;render()}
+
+/* ===== MODAL ===== */
+function openModal(id){CID=id;modal.classList.remove("hidden")}
+
+function save(){
+fetch(API,{method:"POST",body:JSON.stringify({
+action:"update",key:KEY,id:CID,
+pemeriksa:mpemeriksa.value,
+hasilPeriksa:mhasilperiksa.value,
+tglPeriksa:mtglperiksa.value,
+teknisi:mteknisi.value,
+hasilPenanganan:mhasilpenanganan.value,
+tglPenanganan:mtglpenanganan.value,
+catatan:mcatatan.value
+})}).then(()=>location.reload());
+}
 
 load();
 </script>

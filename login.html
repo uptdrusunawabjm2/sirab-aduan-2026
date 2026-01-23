@@ -2,56 +2,49 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Login Admin</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Admin Aduan</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body class="bg-slate-950 min-h-screen flex items-center justify-center text-white">
 
-<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+<div class="bg-slate-900 p-6 rounded-xl w-full max-w-sm shadow">
+  <h1 class="text-xl font-bold mb-4 text-center">Login Admin</h1>
 
-<div class="bg-slate-900 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-800">
-<h1 class="text-xl font-bold text-center mb-6">LOGIN ADMIN</h1>
+  <input id="u" placeholder="Username"
+    class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700">
+  <input id="p" type="password" placeholder="Password"
+    class="w-full mb-4 p-2 rounded bg-slate-800 border border-slate-700">
 
-<input id="user" placeholder="Username"
-class="w-full mb-3 px-4 py-2 rounded-lg bg-slate-800 outline-none">
+  <button onclick="login()" class="w-full bg-blue-600 py-2 rounded hover:bg-blue-700">
+    Login
+  </button>
 
-<input id="pass" type="password" placeholder="Password"
-class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-800 outline-none">
-
-<button onclick="login()"
-class="w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg font-semibold">
-LOGIN
-</button>
-
-<p id="msg" class="text-center text-sm text-red-500 mt-4 hidden"></p>
+  <div id="msg" class="text-center text-red-400 text-sm mt-3"></div>
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbyFmS9G5xPYDyzL9l4-YCNbWgfLETiSkUlmOreWpbDYQmOXaz0wuMCEeoEZmm2-Kuvv/exec";
+const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 
-async function login(){
-  msg.classList.add("hidden");
+async function login() {
+  const u = document.getElementById("u").value.trim();
+  const p = document.getElementById("p").value.trim();
+  const msg = document.getElementById("msg");
 
-  try{
-    const r = await fetch(`${API}?action=login&u=${user.value}&p=${pass.value}`);
-    const j = await r.json();
+  msg.textContent = "Memeriksa...";
 
-    if(j.success){
-      sessionStorage.setItem("login","true");
-      location.href="admin.html";
-    }else{
-      show("Username / Password salah");
+  try {
+    const res = await fetch(`${API}?action=login&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`);
+    const json = await res.json();
+
+    if (json.success) {
+      sessionStorage.setItem("adminKey", p);
+      location.href = "admin.html";
+    } else {
+      msg.textContent = "Username atau password salah.";
     }
-
-  }catch(e){
-    console.error(e);
-    show("Gagal terhubung ke server");
+  } catch {
+    msg.textContent = "Server tidak dapat dihubungi.";
   }
-}
-
-function show(t){
-  msg.textContent = t;
-  msg.classList.remove("hidden");
 }
 </script>
 </body>

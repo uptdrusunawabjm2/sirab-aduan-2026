@@ -11,7 +11,7 @@
 <h1 class="text-2xl font-bold mb-2 text-center">🔍 Tracking Pengaduan</h1>
 <p class="text-center text-slate-400 mb-6 text-sm">Masukkan Submission ID dari laporan Anda</p>
 
-<input id="tid" placeholder="Contoh: 123456789"
+<input id="tid" placeholder="Contoh: 6448581113509491883"
 class="w-full p-3 rounded-xl bg-slate-800 mb-4 outline-none focus:ring-2 focus:ring-blue-600">
 
 <button onclick="track()" class="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-xl font-bold">
@@ -23,6 +23,16 @@ CEK STATUS
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
+
+/* ===== FIELD YANG DISENSOR / DIHILANGKAN ===== */
+const HIDDEN_FIELDS = [
+  "foto dokumentasi",
+  "pernyataan",
+  "submission ip",
+  "submission url",
+  "submission edit url",
+  "last update date"
+];
 
 function badge(s){
   if(!s) return `<span class="px-3 py-1 rounded-full bg-gray-600 text-xs">UNKNOWN</span>`;
@@ -38,6 +48,15 @@ function bar(s){
   if(s.includes("selesai")) return 100;
   if(s.includes("proses")) return 60;
   return 25;
+}
+
+/* ===== FORMAT TANGGAL ===== */
+function onlyDate(val){
+  if(!val) return "-";
+  if(typeof val === "string" && val.includes("T")){
+    return val.split("T")[0];
+  }
+  return val;
 }
 
 async function track(){
@@ -68,10 +87,26 @@ async function track(){
     </div>
     <p class="text-xs text-slate-400">Progress: ${bar(status)}%</p>
 
-    <div class="text-sm space-y-1 mt-3">`;
+    <div class="text-sm space-y-2 mt-3">`;
 
   h.forEach((x,i)=>{
-    html += `<div><span class="text-slate-400">${x}</span><br><b>${d[i]||"-"}</b></div>`;
+    const label = x.toLowerCase();
+
+    // HILANGKAN FIELD TERTENTU
+    if(HIDDEN_FIELDS.some(f => label.includes(f))) return;
+
+    let val = d[i] || "-";
+
+    // FORMAT KHUSUS TANGGAL
+    if(label.includes("tanggal periksa") || label.includes("tanggal penanganan")){
+      val = onlyDate(val);
+    }
+
+    html += `
+      <div>
+        <div class="text-slate-400 text-xs">${x}</div>
+        <div class="font-semibold">${val}</div>
+      </div>`;
   });
 
   html += `</div></div>`;

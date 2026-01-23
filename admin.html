@@ -24,9 +24,9 @@
   <nav class="space-y-2 flex-1">
     <button onclick="show('dash')" class="w-full text-left p-2 rounded bg-slate-800"><span>Dashboard</span></button>
     <button onclick="show('data')" class="w-full text-left p-2 rounded hover:bg-slate-800"><span>Data Aduan</span></button>
-    <button onclick="show('loket')" class="w-full text-left p-2 rounded hover:bg-slate-800"><span>Mode Loket</span></button>
   </nav>
 
+  <!-- LOGOUT DI BAWAH -->
   <button onclick="logout()" class="w-full text-left p-2 rounded hover:bg-red-600 mt-6"><span>Logout</span></button>
 </div>
 
@@ -55,18 +55,22 @@
 <!-- DATA -->
 <div id="data" class="hidden">
   <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
-  <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..." class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
 
-  <div class="overflow-auto border border-slate-800 rounded-xl">
+  <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
+  class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
+
+  <div class="border border-slate-800 rounded-xl overflow-hidden">
     <table class="w-full text-sm" id="t"></table>
   </div>
-</div>
 
-<!-- MODE LOKET -->
-<div id="loket" class="hidden">
-  <h1 class="text-2xl font-bold mb-4">Mode Layar Loket</h1>
-  <p class="text-slate-400 mb-3 text-sm">Auto refresh setiap 20 detik</p>
-  <div id="loketList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+  <!-- PAGINATION -->
+  <div class="flex justify-between items-center mt-4">
+    <div id="pageInfo" class="text-sm text-slate-400"></div>
+    <div class="space-x-2">
+      <button onclick="prevPage()" class="px-3 py-1 bg-slate-800 rounded">◀</button>
+      <button onclick="nextPage()" class="px-3 py-1 bg-slate-800 rounded">▶</button>
+    </div>
+  </div>
 </div>
 
 </div>
@@ -76,20 +80,19 @@ if(!sessionStorage.getItem("admin")) location.href="login.html";
 
 const API="https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
 const KEY="12345";
+const PER_PAGE=10;
 
 const HIDE_COL=[
 "submission ip","submission url","submission edit url",
 "last update date","submission id","janji temu","pernyataan"
 ];
 
-let RAW=[],HEADER=[],chart;
+let RAW=[],HEADER=[],chart,page=1;
 
 /* SIDEBAR */
 function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
-
-/* NAV */
 function show(id){
-dash.classList.add("hidden");data.classList.add("hidden");loket.classList.add("hidden");
+dash.classList.add("hidden");data.classList.add("hidden");
 document.getElementById(id).classList.remove("hidden");
 }
 function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
@@ -98,8 +101,8 @@ function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
 function norm(s){return String(s||"").toLowerCase()}
 function filled(v){return v&&String(v).trim()!==""}
 function getVal(h,d,k){const i=h.findIndex(x=>norm(x).includes(k));return i>-1?d[i]:""}
-function getSubmissionDate(h,r){const i=h.findIndex(x=>norm(x).includes("submission date"));return i>-1?new Date(r[i]):null}
-function isOld(r){const d=getSubmissionDate(HEADER,r);if(!d)return false;return((new Date()-d)/(1000*60*60*24))>3}
+function getDate(h,r){const i=h.findIndex(x=>norm(x).includes("submission date"));return i>-1?new Date(r[i]):null}
+function daysOld(r){const d=getDate(HEADER,r);return d?((new Date()-d)/86400000):0}
 
 /* STATUS */
 function getStatus(h,d){
@@ -112,7 +115,7 @@ if(s)return["SELESAI","green"];if(p)return["DIPERIKSA","yellow"];return["PENDING
 async function load(){
 const r=await fetch(`${API}?action=all&key=${KEY}`);
 const j=await r.json();RAW=j.data;HEADER=j.header;
-buildCards();render();buildLoket();buildRecent();buildChart();
+buildCards();buildRecent();buildChart();render();
 }
 
 /* DASHBOARD */
@@ -127,9 +130,9 @@ cards.innerHTML=`
 
 /* RECENT */
 function buildRecent(){
-const list=[...RAW].sort((a,b)=>getSubmissionDate(HEADER,b)-getSubmissionDate(HEADER,a)).slice(0,5);
+const list=[...RAW].sort((a,b)=>getDate(HEADER,b)-getDate(HEADER,a)).slice(0,5);
 recentList.innerHTML=list.map(r=>{
-const d=getSubmissionDate(HEADER,r);
+const d=getDate(HEADER,r);
 return `<div class="border border-slate-800 rounded-xl p-3 hover:bg-slate-800">
 <div class="text-xs text-slate-400">${d?d.toLocaleDateString("id-ID"):"-"}</div>
 <div class="font-semibold">${r.join(" ").slice(0,80)}...</div></div>`;
@@ -140,7 +143,7 @@ return `<div class="border border-slate-800 rounded-xl p-3 hover:bg-slate-800">
 function buildChart(){
 const map={};
 RAW.forEach(r=>{
-const d=getSubmissionDate(HEADER,r);if(!d)return;
+const d=getDate(HEADER,r);if(!d)return;
 const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
 map[k]=(map[k]||0)+1;
 });
@@ -150,35 +153,34 @@ chart=new Chart(chartBulanan,{type:"line",data:{labels,datasets:[{data,tension:0
 options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
 }
 
-/* TABLE */
+/* TABLE + PAGINATION + BADGE */
 function render(){
 const key=norm(q.value);
+const filtered=RAW.filter(r=>!key||r.join(" ").toLowerCase().includes(key));
+const total=Math.ceil(filtered.length/PER_PAGE);
+if(page>total)page=total||1;
+const start=(page-1)*PER_PAGE;
+const rows=filtered.slice(start,start+PER_PAGE);
+
 let h="<tr class='bg-slate-800'>";
 HEADER.forEach(x=>{if(HIDE_COL.some(v=>norm(x).includes(v)))return;h+=`<th class='p-3 text-left'>${x}</th>`});
 h+="<th>Status</th></tr>";
 
-RAW.forEach(r=>{
-if(key&&!r.join(" ").toLowerCase().includes(key))return;
-const[st,c]=getStatus(HEADER,r);const old=isOld(r);
+rows.forEach(r=>{
+const[st,c]=getStatus(HEADER,r);
+const old=daysOld(r)>3 && st!=="SELESAI";
 h+=`<tr class='border-b border-slate-800 hover:bg-slate-900 ${old?"bg-red-950/40":""}'>`;
 r.forEach((x,i)=>{if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v)))return;h+=`<td class='p-3'>${x||""}</td>`});
-h+=`<td class='p-3 text-${c}-400 font-bold'>${st}</td></tr>`;
+h+=`<td class='p-3 font-bold text-${c}-400'>${st} ${old?'<span class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">TERLAMBAT</span>':""}</td></tr>`;
 });
+
 t.innerHTML=h;
+pageInfo.innerText=`Halaman ${page} dari ${total} (${filtered.length} data)`;
 }
 
-/* LOKET */
-function buildLoket(){
-loketList.innerHTML=RAW.map(r=>{
-const[st,c]=getStatus(HEADER,r);
-return `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-<div class="text-sm text-slate-400 mb-1">ID: ${r[0]}</div>
-<div class="font-semibold mb-2">${r.join(" ").slice(0,70)}...</div>
-<div class="text-${c}-400 font-bold text-xl">${st}</div></div>`;
-}).join("");
-}
+function nextPage(){page++;render()}
+function prevPage(){page--;if(page<1)page=1;render()}
 
-setInterval(()=>{if(!loket.classList.contains("hidden"))load()},20000);
 load();
 </script>
 </body>

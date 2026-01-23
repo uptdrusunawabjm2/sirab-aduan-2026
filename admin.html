@@ -47,9 +47,7 @@ thead th{position:sticky;top:0;background:#0f172a;z-index:10}
 <!-- DASHBOARD -->
 <section id="dash" class="flex-1 overflow-auto p-6">
   <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
-
   <div id="cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
-
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
     <h2 class="font-bold mb-3">🕒 Aduan Terbaru</h2>
     <div id="recentList" class="space-y-2 text-sm"></div>
@@ -115,47 +113,44 @@ thead th{position:sticky;top:0;background:#0f172a;z-index:10}
 <script>
 if(!sessionStorage.getItem("admin")) location.href="login.html";
 
-/* ====== KONFIG ====== */
 const API="https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
 const KEY="12345";
 const PER_PAGE=10;
 
-const HIDE_COL=[
-"submission id","foto dokumentasi","submission ip","submission url",
-"submission edit url","last update date","janji temu","pernyataan"
-];
+const HIDE_COL=["submission id","foto dokumentasi","submission ip","submission url","submission edit url","last update date","janji temu","pernyataan"];
 
-let RAW=[],HEADER=[],page=1,CID="",ID_INDEX=-1;
+let RAW=[],HEADER=[],page=1,CID="";
 
-/* ====== BASIC ====== */
 function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
 function show(id){dash.classList.add("hidden");data.classList.add("hidden");document.getElementById(id).classList.remove("hidden")}
 function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
-function norm(s){return String(s||"").toLowerCase()}
+function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"")}
 function filled(v){return v&&String(v).trim()!==""}
-function getVal(h,d,k){const i=h.findIndex(x=>norm(x).includes(k));return i>-1?d[i]:""}
-function getDate(h,r){const i=h.findIndex(x=>norm(x).includes("submission date"));return i>-1?new Date(r[i]):null}
-function daysOld(r){const d=getDate(HEADER,r);return d?((new Date()-d)/86400000):0}
 
-/* ====== STATUS ====== */
-function getStatus(h,d){
-const p=filled(getVal(h,d,"pemeriksa"))&&filled(getVal(h,d,"hasil periksa"))&&filled(getVal(h,d,"tanggal periksa"));
-const s=filled(getVal(h,d,"teknisi"))&&filled(getVal(h,d,"hasil penanganan"))&&filled(getVal(h,d,"tanggal penanganan"));
-if(s)return["SELESAI","green"];if(p)return["DIPERIKSA","yellow"];return["PENDING","red"];
+function getSubmissionId(row){
+  const idx = HEADER.findIndex(h => norm(h).includes("submissionid"));
+  return idx>-1 ? String(row[idx]).trim() : "";
 }
 
-/* ====== LOAD ====== */
+function getStatus(h,d){
+const p=filled(d[h.findIndex(x=>norm(x).includes("pemeriksa"))]) &&
+         filled(d[h.findIndex(x=>norm(x).includes("hasilperiksa"))]) &&
+         filled(d[h.findIndex(x=>norm(x).includes("tanggalperiksa"))]);
+const s=filled(d[h.findIndex(x=>norm(x).includes("teknisi"))]) &&
+         filled(d[h.findIndex(x=>norm(x).includes("hasilpenanganan"))]) &&
+         filled(d[h.findIndex(x=>norm(x).includes("tanggalpenanganan"))]);
+if(s)return["SELESAI","green"]; if(p)return["DIPERIKSA","yellow"]; return["PENDING","red"];
+}
+
 async function load(){
 const r=await fetch(`${API}?action=all&key=${KEY}`);
-const j=await r.json();RAW=j.data;HEADER=j.header;
-ID_INDEX = HEADER.findIndex(h=>norm(h).includes("submissionid"));
-buildCards();buildRecent();render();
+const j=await r.json(); RAW=j.data; HEADER=j.header;
+buildCards(); buildRecent(); render();
 }
 
-/* ====== DASHBOARD ====== */
 function buildCards(){
 let p=0,d=0,s=0;
-RAW.forEach(r=>{const st=getStatus(HEADER,r)[0];if(st=="SELESAI")s++;else if(st=="DIPERIKSA")d++;else p++});
+RAW.forEach(r=>{const st=getStatus(HEADER,r)[0]; if(st=="SELESAI")s++; else if(st=="DIPERIKSA")d++; else p++;});
 cards.innerHTML=`
 <div class="bg-red-600/20 border border-red-600 rounded-xl p-5"><div>Pending</div><div class="text-3xl font-bold">${p}</div></div>
 <div class="bg-yellow-500/20 border border-yellow-500 rounded-xl p-5"><div>Diperiksa</div><div class="text-3xl font-bold">${d}</div></div>
@@ -163,11 +158,9 @@ cards.innerHTML=`
 }
 
 function buildRecent(){
-const list=[...RAW].sort((a,b)=>getDate(HEADER,b)-getDate(HEADER,a)).slice(0,5);
-recentList.innerHTML=list.map(r=>`<div class="border border-slate-800 rounded p-2">${r.join(" ").slice(0,100)}...</div>`).join("");
+recentList.innerHTML=[...RAW].slice(0,5).map(r=>`<div class="border border-slate-800 rounded p-2">${r.join(" ").slice(0,120)}...</div>`).join("");
 }
 
-/* ====== TABLE ====== */
 function render(){
 const key=norm(q.value);
 const filtered=RAW.filter(r=>!key||r.join(" ").toLowerCase().includes(key));
@@ -175,7 +168,7 @@ const total=Math.ceil(filtered.length/PER_PAGE);
 if(page>total)page=total||1;
 const rows=filtered.slice((page-1)*PER_PAGE,page*PER_PAGE);
 
-let h="<thead><tr class='text-left'>";
+let h="<thead><tr>";
 HEADER.forEach(x=>{
 if(norm(x).includes("submissionid")) return;
 if(HIDE_COL.some(v=>norm(x).includes(v))) return;
@@ -184,71 +177,56 @@ h+=`<th class='p-3'>${x}</th>`;
 h+="<th>Status</th><th>Aksi</th></tr></thead><tbody>";
 
 rows.forEach(r=>{
+const sid=getSubmissionId(r);
 const[st,c]=getStatus(HEADER,r);
-const old=daysOld(r)>3 && st!=="SELESAI";
-h+=`<tr class='border-b border-slate-800 ${old?"bg-red-950/40":""}'>`;
+h+="<tr class='border-b border-slate-800'>";
 r.forEach((x,i)=>{
-if(i===ID_INDEX) return;
+if(norm(HEADER[i]).includes("submissionid")) return;
 if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v))) return;
 h+=`<td class='p-3 align-top'>${x||""}</td>`;
 });
-h+=`<td class='p-3 font-bold text-${c}-400'>${st} ${old?'<span class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">TERLAMBAT</span>':""}</td>`;
-h+=`<td class='p-3'><button onclick="openModal('${r[ID_INDEX]}')" class="text-blue-400">Kelola</button></td></tr>`;
+h+=`<td class='p-3 font-bold text-${c}-400'>${st}</td>`;
+h+=`<td class='p-3'><button onclick="openModal('${sid}')" class="text-blue-400 underline">Kelola</button></td></tr>`;
 });
-
 t.innerHTML=h+"</tbody>";
 pageInfo.innerText=`Halaman ${page} dari ${total} (${filtered.length} data)`;
 }
 
 function nextPage(){page++;render()}
 function prevPage(){page--;if(page<1)page=1;render()}
-function openModal(id){CID=id;modal.classList.remove("hidden")}
+function openModal(id){CID=id; modal.classList.remove("hidden");}
 
-/* ====== SAVE FIX ====== */
 async function save(){
 try{
-  let foto="";
-
-  if(mfoto.files.length){
-    const f=mfoto.files[0];
-    const b64=await toBase64(f);
-    const r=await fetch(API,{method:"POST",body:JSON.stringify({
-      action:"upload",key:KEY,name:f.name,type:f.type,base64:b64.split(",")[1]
-    })});
-    const j=await r.json();
-    if(j.error){ alert("Upload gagal: "+j.error); return; }
-    foto=j.url;
-  }
-
-  const res = await fetch(API,{method:"POST",body:JSON.stringify({
-    action:"update",key:KEY,id:CID,
-    pemeriksa:mpemeriksa.value,
-    hasilPeriksa:mhasilperiksa.value,
-    tglPeriksa:mtglperiksa.value,
-    teknisi:mteknisi.value,
-    hasilPenanganan:mhasilpenanganan.value,
-    tglPenanganan:mtglpenanganan.value,
-    catatan:mcatatan.value,
-    fotoHasil:foto
-  })});
-
-  const out = await res.json();
-  if(out.error){ alert("Gagal simpan: "+out.error); console.log(out); return; }
-
-  alert("✅ Data berhasil disimpan");
-  location.reload();
-
-}catch(err){
-  alert("ERROR: "+err.toString());
-  console.error(err);
+let foto="";
+if(mfoto.files.length){
+const f=mfoto.files[0];
+const b64=await toBase64(f);
+const r=await fetch(API,{method:"POST",body:JSON.stringify({action:"upload",key:KEY,name:f.name,type:f.type,base64:b64.split(",")[1]})});
+const j=await r.json(); if(j.error) return alert(j.error); foto=j.url;
 }
+
+const res = await fetch(API,{method:"POST",body:JSON.stringify({
+action:"update",key:KEY,id:CID,
+pemeriksa:mpemeriksa.value,
+hasilPeriksa:mhasilperiksa.value,
+tglPeriksa:mtglperiksa.value,
+teknisi:mteknisi.value,
+hasilPenanganan:mhasilpenanganan.value,
+tglPenanganan:mtglpenanganan.value,
+catatan:mcatatan.value,
+fotoHasil:foto
+})});
+
+const out = await res.json();
+if(out.error) return alert("Gagal simpan: "+out.error);
+alert("✅ Data berhasil disimpan"); location.reload();
+
+}catch(err){ alert("ERROR: "+err); }
 }
 
 function toBase64(file){
-return new Promise((res,rej)=>{
-const r=new FileReader();
-r.onload=()=>res(r.result);r.onerror=e=>rej(e);r.readAsDataURL(file);
-});
+return new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=e=>rej(e); r.readAsDataURL(file);});
 }
 
 load();

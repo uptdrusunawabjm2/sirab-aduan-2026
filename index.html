@@ -24,7 +24,7 @@ CEK STATUS
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
 
-/* ===== FIELD YANG DISENSOR / DIHILANGKAN ===== */
+/* FIELD YANG DISEMBUNYIKAN */
 const HIDDEN_FIELDS = [
   "foto dokumentasi",
   "pernyataan",
@@ -34,29 +34,36 @@ const HIDDEN_FIELDS = [
   "last update date"
 ];
 
-function badge(s){
-  if(!s) return `<span class="px-3 py-1 rounded-full bg-gray-600 text-xs">UNKNOWN</span>`;
-  s = s.toLowerCase();
-  if(s.includes("selesai")) return `<span class="px-3 py-1 rounded-full bg-green-600 text-xs">SELESAI</span>`;
-  if(s.includes("proses")) return `<span class="px-3 py-1 rounded-full bg-yellow-500 text-black text-xs">DIPROSES</span>`;
-  return `<span class="px-3 py-1 rounded-full bg-red-600 text-xs">PENDING</span>`;
-}
-
-function bar(s){
-  if(!s) return 20;
-  s=s.toLowerCase();
-  if(s.includes("selesai")) return 100;
-  if(s.includes("proses")) return 60;
-  return 25;
-}
-
-/* ===== FORMAT TANGGAL ===== */
 function onlyDate(val){
   if(!val) return "-";
-  if(typeof val === "string" && val.includes("T")){
-    return val.split("T")[0];
-  }
+  if(typeof val === "string" && val.includes("T")) return val.split("T")[0];
   return val;
+}
+
+/* ===== LOGIKA STATUS OTOMATIS ===== */
+function getStatus(header, data){
+  const val = (name)=>{
+    const i = header.findIndex(h=>h.toLowerCase().includes(name));
+    return i > -1 ? String(data[i]||"").trim() : "";
+  };
+
+  const pemeriksa = val("pemeriksa");
+  const hasilPeriksa = val("hasil periksa");
+  const tglPeriksa = val("tanggal periksa");
+
+  const teknisi = val("teknisi");
+  const hasilPenanganan = val("hasil penanganan");
+  const tglPenanganan = val("tanggal penanganan");
+
+  if(teknisi && hasilPenanganan && tglPenanganan){
+    return { label:"SELESAI", color:"green", progress:100 };
+  }
+
+  if(pemeriksa && hasilPeriksa && tglPeriksa){
+    return { label:"DIPERIKSA", color:"yellow", progress:60 };
+  }
+
+  return { label:"PENDING", color:"red", progress:25 };
 }
 
 async function track(){
@@ -72,32 +79,32 @@ async function track(){
 
   const h = j.header;
   const d = j.data;
-  const statusIndex = h.findIndex(x=>x.toLowerCase().includes("status"));
-  const status = d[statusIndex] || "Pending";
+  const st = getStatus(h,d);
+
+  let badge =
+    st.color==="green" ? "bg-green-600" :
+    st.color==="yellow" ? "bg-yellow-500 text-black" :
+    "bg-red-600";
 
   let html = `
   <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 space-y-3">
     <div class="flex justify-between items-center">
       <h2 class="font-bold text-lg">📄 Detail Pengaduan</h2>
-      ${badge(status)}
+      <span class="px-3 py-1 rounded-full ${badge} text-xs font-bold">${st.label}</span>
     </div>
 
     <div class="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-      <div class="bg-blue-500 h-2" style="width:${bar(status)}%"></div>
+      <div class="bg-blue-500 h-2" style="width:${st.progress}%"></div>
     </div>
-    <p class="text-xs text-slate-400">Progress: ${bar(status)}%</p>
+    <p class="text-xs text-slate-400">Progress: ${st.progress}%</p>
 
     <div class="text-sm space-y-2 mt-3">`;
 
   h.forEach((x,i)=>{
     const label = x.toLowerCase();
-
-    // HILANGKAN FIELD TERTENTU
     if(HIDDEN_FIELDS.some(f => label.includes(f))) return;
 
     let val = d[i] || "-";
-
-    // FORMAT KHUSUS TANGGAL
     if(label.includes("tanggal periksa") || label.includes("tanggal penanganan")){
       val = onlyDate(val);
     }

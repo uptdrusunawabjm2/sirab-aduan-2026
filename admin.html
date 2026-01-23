@@ -203,4 +203,13 @@ fotoHasil:foto
 }
 
 function toBase64(file){
-r
+return new Promise((res,rej)=>{
+const r=new FileReader();
+r.onload=()=>res(r.result);r.onerror=e=>rej(e);r.readAsDataURL(file);
+});
+}
+
+load();
+</script>
+</body>
+</html>

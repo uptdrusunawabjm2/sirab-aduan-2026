@@ -49,12 +49,10 @@
   <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
   class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
 
-  <!-- AREA SCROLL -->
   <div class="border border-slate-800 rounded-xl overflow-auto" style="max-height:65vh">
     <table class="w-full text-sm" id="t"></table>
   </div>
 
-  <!-- PAGINATION -->
   <div class="flex justify-between items-center mt-4">
     <div id="pageInfo" class="text-sm text-slate-400"></div>
     <div class="space-x-2">
@@ -64,9 +62,9 @@
   </div>
 </div>
 
-<!-- MODAL KELOLA -->
+<!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-<div class="bg-slate-900 w-full max-w-2xl p-6 rounded-xl">
+<div class="bg-slate-900 w-full max-w-2xl p-6 rounded-xl overflow-y-auto max-h-[90vh]">
 <h2 class="text-xl font-bold mb-4">Detail & Penanganan</h2>
 
 <input id="mpemeriksa" placeholder="Pemeriksa" class="w-full p-2 rounded bg-slate-800 mb-2">
@@ -80,6 +78,10 @@
 
 <input id="mtglpenanganan" type="date" class="w-full p-2 rounded bg-slate-800 mb-2">
 <textarea id="mhasilpenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 mb-2"></textarea>
+
+<!-- UPLOAD FOTO -->
+<label class="block text-sm mb-1">Upload Foto Hasil Penanganan</label>
+<input id="mfoto" type="file" accept="image/*" class="w-full p-2 bg-slate-800 rounded mb-3">
 
 <textarea id="mcatatan" placeholder="Catatan tambahan" class="w-full p-2 rounded bg-slate-800 mb-4"></textarea>
 
@@ -97,19 +99,18 @@ const API="https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfb
 const KEY="12345";
 const PER_PAGE=10;
 
+/* FOTO DOKUMENTASI DIHILANGKAN */
 const HIDE_COL=[
-"submission ip","submission url","submission edit url",
+"foto dokumentasi","submission ip","submission url","submission edit url",
 "last update date","submission id","janji temu","pernyataan"
 ];
 
 let RAW=[],HEADER=[],page=1,CID="";
 
-/* ===== SIDEBAR ===== */
+/* ===== BASIC ===== */
 function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
 function show(id){dash.classList.add("hidden");data.classList.add("hidden");document.getElementById(id).classList.remove("hidden")}
 function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
-
-/* ===== UTIL ===== */
 function norm(s){return String(s||"").toLowerCase()}
 function filled(v){return v&&String(v).trim()!==""}
 function getVal(h,d,k){const i=h.findIndex(x=>norm(x).includes(k));return i>-1?d[i]:""}
@@ -176,7 +177,18 @@ function prevPage(){page--;if(page<1)page=1;render()}
 /* ===== MODAL ===== */
 function openModal(id){CID=id;modal.classList.remove("hidden")}
 
-function save(){
+async function save(){
+let foto="";
+if(mfoto.files.length){
+const f=mfoto.files[0];
+const b64=await toBase64(f);
+const r=await fetch(API,{method:"POST",body:JSON.stringify({
+action:"upload",key:KEY,name:f.name,type:f.type,base64:b64.split(",")[1]
+})});
+const j=await r.json();
+foto=j.url;
+}
+
 fetch(API,{method:"POST",body:JSON.stringify({
 action:"update",key:KEY,id:CID,
 pemeriksa:mpemeriksa.value,
@@ -185,11 +197,10 @@ tglPeriksa:mtglperiksa.value,
 teknisi:mteknisi.value,
 hasilPenanganan:mhasilpenanganan.value,
 tglPenanganan:mtglpenanganan.value,
-catatan:mcatatan.value
+catatan:mcatatan.value,
+fotoHasil:foto
 })}).then(()=>location.reload());
 }
 
-load();
-</script>
-</body>
-</html>
+function toBase64(file){
+r

@@ -202,27 +202,37 @@ function save(){
   const admin = sessionStorage.getItem("admin") || "ADMIN";
   const waktu = new Date().toLocaleString("id-ID");
 
-  const log = (mcatatan.value || "") + 
-    `\n[${waktu}] Update oleh ${admin}`;
+  const payload = {
+    action:"update",
+    key:KEY,
+    id:CID,
+
+    pemeriksa: mpemeriksa.value,
+    hasilPeriksa: mhasilperiksa.value,
+    tglPeriksa: mtglperiksa.value,
+
+    teknisi: mteknisi.value,
+    hasilPenanganan: mhasilpenanganan.value,
+    tglPenanganan: mtglpenanganan.value,
+
+    catatan: (mcatatan.value || "") + `\n[${waktu}] Update oleh ${admin}`
+  };
+
+  console.log("KIRIM KE API:", payload);
 
   fetch(API,{
     method:"POST",
-    body:JSON.stringify({
-      action:"update",
-      key:KEY,
-      id:CID,
-
-      pemeriksa: mpemeriksa.value,
-      hasilPeriksa: mhasilperiksa.value,
-      tglPeriksa: mtglperiksa.value,
-
-      teknisi: mteknisi.value,
-      hasilPenanganan: mhasilpenanganan.value,
-      tglPenanganan: mtglpenanganan.value,
-
-      catatan: log
-    })
-  }).then(()=>location.reload());
+    body:JSON.stringify(payload)
+  })
+  .then(r=>r.json())
+  .then(j=>{
+    console.log("RESPON API:", j);
+    alert(JSON.stringify(j));
+    if(j.success) location.reload();
+  })
+  .catch(err=>{
+    alert("FETCH ERROR: "+err);
+  });
 }
 
 /* AUTO REFRESH MODE LOKET */

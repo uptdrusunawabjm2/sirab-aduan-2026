@@ -21,30 +21,43 @@
     LOGIN
   </button>
 
-  <p id="msg" class="text-center text-red-400 mt-4 hidden">Login gagal</p>
+  <p id="msg" class="text-center text-red-400 mt-4 hidden"></p>
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbyFmS9G5xPYDyzL9l4-YCNbWgfLETiSkUlmOreWpbDYQmOXaz0wuMCEeoEZmm2-Kuvv/execc";
+const API_URL = "https://script.google.com/macros/s/AKfycbyFmS9G5xPYDyzL9l4-YCNbWgfLETiSkUlmOreWpbDYQmOXaz0wuMCEeoEZmm2-Kuvv/exec";
 
 async function login(){
-  document.getElementById("msg").classList.add("hidden");
+  const msg = document.getElementById("msg");
+  msg.classList.add("hidden");
 
   const fd = new FormData();
   fd.append("action","login");
   fd.append("username",document.getElementById("user").value);
   fd.append("password",document.getElementById("pass").value);
 
-  const res = await fetch(API,{ method:"POST", body:fd });
-  const json = await res.json();
+  try{
+    const res = await fetch(API_URL,{ method:"POST", body:fd });
+    const text = await res.text();
+    console.log("RAW RESPONSE:", text);
 
-  if(json.success){
-    localStorage.setItem("admin","true");
-    location.href = "admin.html";
-  }else{
-    document.getElementById("msg").classList.remove("hidden");
+    const json = JSON.parse(text);
+
+    if(json.success){
+      localStorage.setItem("admin_login","true");
+      location.href = "admin.html";
+    }else{
+      msg.innerText = json.error || "Login gagal";
+      msg.classList.remove("hidden");
+    }
+
+  }catch(e){
+    msg.innerText = "API tidak valid / bukan WebApp";
+    msg.classList.remove("hidden");
+    console.error(e);
   }
 }
 </script>
+
 </body>
 </html>

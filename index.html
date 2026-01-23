@@ -3,40 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <title>Tracking Aduan Rusunawa</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  body {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+  .mobile-full {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+</style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center">
 
-<div class="bg-slate-900 p-6 rounded-xl w-full max-w-xl shadow">
-  <h1 class="text-xl font-bold mb-4 text-center">Tracking Aduan Rusunawa</h1>
+<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white mobile-full flex items-center justify-center p-3">
 
+<div class="w-full max-w-3xl bg-slate-900/90 backdrop-blur border border-slate-800 rounded-2xl shadow-xl p-5">
+
+  <h1 class="text-2xl font-bold text-center mb-1">Tracking Aduan Rusunawa</h1>
+  <p class="text-center text-slate-400 text-sm mb-5">Pantau status penanganan aduan Anda secara realtime</p>
+
+  <!-- INPUT -->
   <div class="flex gap-2 mb-4">
     <input id="ticket" type="text" placeholder="Masukkan Submission ID"
-      class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-    <button onclick="cek()" class="bg-blue-600 px-4 rounded hover:bg-blue-700">
+      class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 focus:outline-none focus:ring focus:ring-blue-600">
+    <button onclick="cek()" class="bg-blue-600 px-5 rounded-xl font-semibold hover:bg-blue-700 transition">
       Cek
     </button>
   </div>
 
   <!-- STATUS BAR -->
-  <div id="statusBar" class="hidden mb-3 p-3 rounded text-center font-bold"></div>
+  <div id="statusBar" class="hidden mb-4 p-3 rounded-xl text-center font-bold text-lg"></div>
 
-  <div id="hasil" class="hidden bg-slate-800 p-4 rounded text-sm space-y-1"></div>
-  <div id="msg" class="text-center text-red-400 text-sm"></div>
+  <!-- HASIL -->
+  <div id="hasil" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+
+  <div id="msg" class="text-center text-red-400 text-sm mt-3"></div>
+
 </div>
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 
-async function cek() {
-  const id = document.getElementById("ticket").value.trim();
-  const hasil = document.getElementById("hasil");
-  const msg = document.getElementById("msg");
-  const bar = document.getElementById("statusBar");
+/* ===== AUTO FULLSCREEN DI HP ===== */
+if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  document.body.classList.add("mobile-full");
+}
 
+async function cek() {
+  const id = ticket.value.trim();
   hasil.classList.add("hidden");
-  bar.classList.add("hidden");
-  msg.textContent = "Memuat...";
+  statusBar.classList.add("hidden");
+  msg.textContent = "Memuat data...";
 
   if (!id) {
     msg.textContent = "Submission ID wajib diisi.";
@@ -53,77 +76,105 @@ async function cek() {
     }
 
     msg.textContent = "";
-    hasil.innerHTML = renderCustom(json.header, json.data);
+    renderStatus(json.header, json.data);
+    renderUI(json.header, json.data);
     hasil.classList.remove("hidden");
 
-    renderStatus(json.header, json.data);
-
-  } catch (e) {
+  } catch {
     msg.textContent = "Gagal menghubungi server.";
   }
 }
 
-/* ===== STATUS BAR LOGIC ===== */
-function renderStatus(header, row) {
-  const bar = document.getElementById("statusBar");
-  const map = {};
-  header.forEach((h,i)=>map[h]=row[i]);
+/* ===== STATUS ===== */
+function renderStatus(header, row){
+  const map = {}; header.forEach((h,i)=>map[h]=row[i]);
 
-  const diperiksa =
-    map["Pemeriksa"] && map["Tanggal Periksa"] && map["Hasil Periksa"];
+  const diperiksa = map["Pemeriksa"] && map["Tanggal Periksa"] && map["Hasil Periksa"];
+  const selesai = map["Teknisi"] && map["Tanggal Penanganan"] && map["Hasil Penanganan"];
 
-  const selesai =
-    map["Teknisi"] && map["Tanggal Penanganan"] && map["Hasil Penanganan"];
+  statusBar.className = "mb-4 p-3 rounded-xl text-center font-bold text-lg";
 
-  bar.className = "mb-3 p-3 rounded text-center font-bold";
-
-  if (selesai) {
-    bar.textContent = "STATUS: SELESAI";
-    bar.classList.add("bg-green-600","text-white");
-  } else if (diperiksa) {
-    bar.textContent = "STATUS: DIPERIKSA";
-    bar.classList.add("bg-blue-600","text-white");
+  if (selesai){
+    statusBar.textContent = "STATUS: SELESAI";
+    statusBar.classList.add("bg-green-600");
+  } else if (diperiksa){
+    statusBar.textContent = "STATUS: DIPERIKSA";
+    statusBar.classList.add("bg-blue-600");
   } else {
-    bar.textContent = "STATUS: PENDING";
-    bar.classList.add("bg-yellow-500","text-black");
+    statusBar.textContent = "STATUS: PENDING";
+    statusBar.classList.add("bg-yellow-400","text-black");
   }
-
-  bar.classList.remove("hidden");
+  statusBar.classList.remove("hidden");
 }
 
-/* ===== RENDER DATA ===== */
-function renderCustom(header, row) {
-  const map = {};
-  header.forEach((h, i) => map[h] = row[i]);
+/* ===== UI RENDER ===== */
+function renderUI(header, row){
+  const map = {}; header.forEach((h,i)=>map[h]=row[i]);
 
-  let html = "";
+  hasil.innerHTML = `
+    <div class="md:col-span-2 bg-slate-800 rounded-xl p-4 space-y-2">
+      <div class="text-xs text-slate-400">Submission ID</div>
+      <div class="font-mono text-lg text-blue-400 mb-3 break-all">${map["Submission ID"]||""}</div>
 
-  // URUTAN KHUSUS
-  add("Submission ID");
-  add("RUSUNAWA");
-  add("NOMOR UNIT/SARUSUNAWA");
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        ${item("RUSUNAWA", map["RUSUNAWA"])}
+        ${item("NOMOR UNIT/SARUSUNAWA", map["NOMOR UNIT/SARUSUNAWA"])}
+        ${item("NAMA LENGKAP", map["NAMA LENGKAP"])}
+        ${item("NOMOR HP/WA", map["NOMOR HP/WA"])}
+      </div>
 
-  // TAMPILKAN LAINNYA (KECUALI PERNYATAAN & YANG SUDAH)
-  header.forEach(h => {
-    if (
-      ["Submission ID","RUSUNAWA","NOMOR UNIT/SARUSUNAWA","PERNYATAAN"]
-      .includes(h)
-    ) return;
-    add(h);
+      <div class="mt-2">${block("ISI LAPORAN", map["ISI LAPORAN"])}</div>
+      ${foto("FOTO DOKUMENTASI", map["FOTO DOKUMENTASI"])}
+
+      <hr class="border-slate-700 my-3">
+
+      ${item("Pemeriksa", map["Pemeriksa"])}
+      ${item("Tanggal Periksa", formatDate(map["Tanggal Periksa"]))}
+      ${block("Hasil Periksa", map["Hasil Periksa"])}
+
+      <hr class="border-slate-700 my-3">
+
+      ${item("Teknisi", map["Teknisi"])}
+      ${item("Tanggal Penanganan", formatDate(map["Tanggal Penanganan"]))}
+      ${block("Hasil Penanganan", map["Hasil Penanganan"])}
+      ${foto("FOTO PENANGANAN", map["Foto"])}
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-4 flex flex-col items-center justify-center">
+      <div class="text-sm text-slate-400 mb-2">QR Code Aduan</div>
+      <div id="qrcode" class="bg-white p-3 rounded-xl"></div>
+      <div class="text-xs text-slate-400 mt-3 text-center">
+        Scan QR ini untuk membuka tracking aduan
+      </div>
+    </div>
+  `;
+
+  document.getElementById("qrcode").innerHTML = "";
+  new QRCode(document.getElementById("qrcode"), {
+    text: map["Submission ID"],
+    width: 180,
+    height: 180
   });
+}
 
-  function add(label){
-    const val = map[label];
-    if (!val) return;
-    if (label.toLowerCase().includes("foto")) {
-      html += `<div><b>${label}:</b><br>
-        <a href="${val}" target="_blank" class="text-blue-400 underline">Lihat Foto</a></div>`;
-    } else {
-      html += `<div><b>${label}:</b> ${val}</div>`;
-    }
-  }
-
-  return html;
+/* ===== HELPERS ===== */
+function item(label,val){
+  if(!val) return "";
+  return `<div><b class="text-slate-300">${label}:</b><br>${val}</div>`;
+}
+function block(label,val){
+  if(!val) return "";
+  return `<div><b class="text-slate-300">${label}:</b><br>${val}</div>`;
+}
+function foto(label,val){
+  if(!val) return "";
+  return `<div><b class="text-slate-300">${label}:</b><br>
+    <a href="${val}" target="_blank" class="text-blue-400 underline">Lihat Foto</a></div>`;
+}
+function formatDate(v){
+  if(!v) return "";
+  const d=new Date(v); if(isNaN(d)) return v;
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
 }
 </script>
 </body>

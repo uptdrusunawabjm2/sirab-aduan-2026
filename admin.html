@@ -4,40 +4,58 @@
 <meta charset="UTF-8">
 <title>Admin Pengaduan</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.sidebar-collapsed{width:4rem!important}
+.sidebar-collapsed h2,
+.sidebar-collapsed nav span{display:none}
+</style>
 </head>
 
-<body class="bg-slate-950 text-white min-h-screen flex">
+<body class="bg-slate-950 text-white min-h-screen flex overflow-hidden">
 
 <!-- SIDEBAR -->
-<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 p-4 transition-all duration-300">
+<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 p-4 transition-all duration-300 flex flex-col">
   <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-bold">🛠 Admin Pengaduan</h2>
+    <h2 class="text-xl font-bold whitespace-nowrap">🛠 Admin Pengaduan</h2>
     <button onclick="toggleSidebar()" class="text-xl">☰</button>
   </div>
 
-  <nav class="space-y-2">
-    <button onclick="show('dash')" class="w-full text-left p-2 rounded bg-slate-800">Dashboard</button>
-    <button onclick="show('data')" class="w-full text-left p-2 rounded hover:bg-slate-800">Data Aduan</button>
-    <button onclick="show('loket')" class="w-full text-left p-2 rounded hover:bg-slate-800">Mode Loket</button>
-    <button onclick="logout()" class="w-full text-left p-2 rounded hover:bg-red-600 mt-10">Logout</button>
+  <nav class="space-y-2 flex-1">
+    <button onclick="show('dash')" class="w-full text-left p-2 rounded bg-slate-800"><span>Dashboard</span></button>
+    <button onclick="show('data')" class="w-full text-left p-2 rounded hover:bg-slate-800"><span>Data Aduan</span></button>
+    <button onclick="show('loket')" class="w-full text-left p-2 rounded hover:bg-slate-800"><span>Mode Loket</span></button>
   </nav>
+
+  <button onclick="logout()" class="w-full text-left p-2 rounded hover:bg-red-600 mt-6"><span>Logout</span></button>
 </div>
 
 <!-- MAIN -->
-<div id="main" class="flex-1 p-6 overflow-auto transition-all duration-300">
+<div id="main" class="flex-1 p-6 overflow-auto">
 
 <!-- DASHBOARD -->
 <div id="dash">
-  <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
-  <div id="cards" class="grid md:grid-cols-3 gap-4"></div>
+  <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+
+  <div id="cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8"></div>
+
+  <!-- GRAFIK -->
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
+    <h2 class="font-bold mb-4">📊 Grafik Bulanan Aduan</h2>
+    <canvas id="chartBulanan" height="100"></canvas>
+  </div>
+
+  <!-- TERBARU -->
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+    <h2 class="font-bold mb-4">🕒 Aduan Terbaru</h2>
+    <div id="recentList" class="space-y-3"></div>
+  </div>
 </div>
 
 <!-- DATA -->
 <div id="data" class="hidden">
   <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
-
-  <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
-  class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
+  <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..." class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
 
   <div class="overflow-auto border border-slate-800 rounded-xl">
     <table class="w-full text-sm" id="t"></table>
@@ -48,7 +66,7 @@
 <div id="loket" class="hidden">
   <h1 class="text-2xl font-bold mb-4">Mode Layar Loket</h1>
   <p class="text-slate-400 mb-3 text-sm">Auto refresh setiap 20 detik</p>
-  <div id="loketList" class="grid md:grid-cols-3 gap-4"></div>
+  <div id="loketList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
 </div>
 
 </div>
@@ -56,134 +74,111 @@
 <script>
 if(!sessionStorage.getItem("admin")) location.href="login.html";
 
-const API = "https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
-const KEY = "12345";
+const API="https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
+const KEY="12345";
 
-/* ===== KOLOM YANG DISEMBUNYIKAN ===== */
-const HIDE_COL = [
-  "submission ip",
-  "submission url",
-  "submission edit url",
-  "last update date",
-  "submission id"
+const HIDE_COL=[
+"submission ip","submission url","submission edit url",
+"last update date","submission id","janji temu","pernyataan"
 ];
 
-let RAW=[], HEADER=[], SIDEBAR=true;
+let RAW=[],HEADER=[],chart;
 
-/* ===== SIDEBAR ===== */
-function toggleSidebar(){
-  SIDEBAR = !SIDEBAR;
-  if(SIDEBAR){
-    sidebar.classList.remove("w-16");
-    sidebar.classList.add("w-64");
-  }else{
-    sidebar.classList.remove("w-64");
-    sidebar.classList.add("w-16");
-  }
-}
+/* SIDEBAR */
+function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
 
-/* ===== NAV ===== */
+/* NAV */
 function show(id){
-  dash.classList.add("hidden");
-  data.classList.add("hidden");
-  loket.classList.add("hidden");
-  document.getElementById(id).classList.remove("hidden");
+dash.classList.add("hidden");data.classList.add("hidden");loket.classList.add("hidden");
+document.getElementById(id).classList.remove("hidden");
 }
+function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
 
-function logout(){
-  sessionStorage.removeItem("admin");
-  location.href="login.html";
-}
+/* UTIL */
+function norm(s){return String(s||"").toLowerCase()}
+function filled(v){return v&&String(v).trim()!==""}
+function getVal(h,d,k){const i=h.findIndex(x=>norm(x).includes(k));return i>-1?d[i]:""}
+function getSubmissionDate(h,r){const i=h.findIndex(x=>norm(x).includes("submission date"));return i>-1?new Date(r[i]):null}
+function isOld(r){const d=getSubmissionDate(HEADER,r);if(!d)return false;return((new Date()-d)/(1000*60*60*24))>3}
 
-/* ===== UTIL ===== */
-function norm(s){ return String(s||"").toLowerCase(); }
-function filled(v){ return v && String(v).trim()!==""; }
-
-/* ===== STATUS ===== */
-function getVal(h,d,k){
-  const i = h.findIndex(x=>norm(x).includes(k));
-  return i>-1 ? d[i] : "";
-}
-
+/* STATUS */
 function getStatus(h,d){
-  const p = filled(getVal(h,d,"pemeriksa")) && filled(getVal(h,d,"hasil periksa")) && filled(getVal(h,d,"tanggal periksa"));
-  const s = filled(getVal(h,d,"teknisi")) && filled(getVal(h,d,"hasil penanganan")) && filled(getVal(h,d,"tanggal penanganan"));
-  if(s) return ["SELESAI","green"];
-  if(p) return ["DIPERIKSA","yellow"];
-  return ["PENDING","red"];
+const p=filled(getVal(h,d,"pemeriksa"))&&filled(getVal(h,d,"hasil periksa"))&&filled(getVal(h,d,"tanggal periksa"));
+const s=filled(getVal(h,d,"teknisi"))&&filled(getVal(h,d,"hasil penanganan"))&&filled(getVal(h,d,"tanggal penanganan"));
+if(s)return["SELESAI","green"];if(p)return["DIPERIKSA","yellow"];return["PENDING","red"];
 }
 
-/* ===== LOAD ===== */
+/* LOAD */
 async function load(){
-  const r = await fetch(`${API}?action=all&key=${KEY}`);
-  const j = await r.json();
-  RAW=j.data; HEADER=j.header;
-  buildCards();
-  render();
-  buildLoket();
+const r=await fetch(`${API}?action=all&key=${KEY}`);
+const j=await r.json();RAW=j.data;HEADER=j.header;
+buildCards();render();buildLoket();buildRecent();buildChart();
 }
 
-/* ===== DASHBOARD ===== */
+/* DASHBOARD */
 function buildCards(){
-  let p=0,d=0,s=0;
-  RAW.forEach(r=>{
-    const st=getStatus(HEADER,r)[0];
-    if(st=="SELESAI") s++;
-    else if(st=="DIPERIKSA") d++;
-    else p++;
-  });
-
-  cards.innerHTML=`
-  <div class="bg-red-600/20 border border-red-600 p-4 rounded-xl">Pending<br><b class="text-3xl">${p}</b></div>
-  <div class="bg-yellow-500/20 border border-yellow-500 p-4 rounded-xl">Diperiksa<br><b class="text-3xl">${d}</b></div>
-  <div class="bg-green-600/20 border border-green-600 p-4 rounded-xl">Selesai<br><b class="text-3xl">${s}</b></div>`;
+let p=0,d=0,s=0;
+RAW.forEach(r=>{const st=getStatus(HEADER,r)[0];if(st=="SELESAI")s++;else if(st=="DIPERIKSA")d++;else p++});
+cards.innerHTML=`
+<div class="bg-red-600/20 border border-red-600 rounded-2xl p-6 h-32 flex flex-col justify-between"><div>Pending</div><div class="text-4xl font-bold">${p}</div></div>
+<div class="bg-yellow-500/20 border border-yellow-500 rounded-2xl p-6 h-32 flex flex-col justify-between"><div>Diperiksa</div><div class="text-4xl font-bold">${d}</div></div>
+<div class="bg-green-600/20 border border-green-600 rounded-2xl p-6 h-32 flex flex-col justify-between"><div>Selesai</div><div class="text-4xl font-bold">${s}</div></div>`;
 }
 
-/* ===== TABLE ===== */
+/* RECENT */
+function buildRecent(){
+const list=[...RAW].sort((a,b)=>getSubmissionDate(HEADER,b)-getSubmissionDate(HEADER,a)).slice(0,5);
+recentList.innerHTML=list.map(r=>{
+const d=getSubmissionDate(HEADER,r);
+return `<div class="border border-slate-800 rounded-xl p-3 hover:bg-slate-800">
+<div class="text-xs text-slate-400">${d?d.toLocaleDateString("id-ID"):"-"}</div>
+<div class="font-semibold">${r.join(" ").slice(0,80)}...</div></div>`;
+}).join("");
+}
+
+/* CHART */
+function buildChart(){
+const map={};
+RAW.forEach(r=>{
+const d=getSubmissionDate(HEADER,r);if(!d)return;
+const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+map[k]=(map[k]||0)+1;
+});
+const labels=Object.keys(map).sort();const data=labels.map(l=>map[l]);
+if(chart)chart.destroy();
+chart=new Chart(chartBulanan,{type:"line",data:{labels,datasets:[{data,tension:0.4,fill:true}]},
+options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+}
+
+/* TABLE */
 function render(){
-  const key = norm(q.value);
+const key=norm(q.value);
+let h="<tr class='bg-slate-800'>";
+HEADER.forEach(x=>{if(HIDE_COL.some(v=>norm(x).includes(v)))return;h+=`<th class='p-3 text-left'>${x}</th>`});
+h+="<th>Status</th></tr>";
 
-  let h="<tr class='bg-slate-800'>";
-  HEADER.forEach(x=>{
-    if(HIDE_COL.some(v=>norm(x).includes(v))) return;
-    h+=`<th class='p-2 text-left'>${x}</th>`;
-  });
-  h+="<th>Status</th><th>Aksi</th></tr>";
-
-  RAW.forEach(r=>{
-    if(key && !r.join(" ").toLowerCase().includes(key)) return;
-    const [st,c]=getStatus(HEADER,r);
-
-    h+="<tr class='border-b border-slate-800 hover:bg-slate-900'>";
-    r.forEach((x,i)=>{
-      if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v))) return;
-      h+=`<td class='p-2'>${x||""}</td>`;
-    });
-    h+=`<td class='p-2 text-${c}-400 font-bold'>${st}</td>`;
-    h+=`<td class='p-2'><button class='text-blue-400'>Kelola</button></td></tr>`;
-  });
-
-  t.innerHTML=h;
+RAW.forEach(r=>{
+if(key&&!r.join(" ").toLowerCase().includes(key))return;
+const[st,c]=getStatus(HEADER,r);const old=isOld(r);
+h+=`<tr class='border-b border-slate-800 hover:bg-slate-900 ${old?"bg-red-950/40":""}'>`;
+r.forEach((x,i)=>{if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v)))return;h+=`<td class='p-3'>${x||""}</td>`});
+h+=`<td class='p-3 text-${c}-400 font-bold'>${st}</td></tr>`;
+});
+t.innerHTML=h;
 }
 
-/* ===== MODE LOKET ===== */
+/* LOKET */
 function buildLoket(){
-  let html="";
-  RAW.forEach(r=>{
-    const [st,c]=getStatus(HEADER,r);
-    html+=`
-    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-      <div class="text-sm text-slate-400">ID: ${r[0]}</div>
-      <div class="font-bold">${r.join(" ").slice(0,70)}...</div>
-      <div class="mt-2 text-${c}-400 font-bold text-xl">${st}</div>
-    </div>`;
-  });
-  loketList.innerHTML=html;
+loketList.innerHTML=RAW.map(r=>{
+const[st,c]=getStatus(HEADER,r);
+return `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+<div class="text-sm text-slate-400 mb-1">ID: ${r[0]}</div>
+<div class="font-semibold mb-2">${r.join(" ").slice(0,70)}...</div>
+<div class="text-${c}-400 font-bold text-xl">${st}</div></div>`;
+}).join("");
 }
 
-/* AUTO REFRESH MODE LOKET */
-setInterval(()=>{ if(!loket.classList.contains("hidden")) load(); },20000);
-
+setInterval(()=>{if(!loket.classList.contains("hidden"))load()},20000);
 load();
 </script>
 </body>

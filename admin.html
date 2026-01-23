@@ -79,7 +79,6 @@
 <input id="mtglpenanganan" type="date" class="w-full p-2 rounded bg-slate-800 mb-2">
 <textarea id="mhasilpenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 mb-2"></textarea>
 
-<!-- UPLOAD FOTO -->
 <label class="block text-sm mb-1">Upload Foto Hasil Penanganan</label>
 <input id="mfoto" type="file" accept="image/*" class="w-full p-2 bg-slate-800 rounded mb-3">
 
@@ -99,15 +98,14 @@ const API="https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfb
 const KEY="12345";
 const PER_PAGE=10;
 
-/* FOTO DOKUMENTASI DIHILANGKAN */
 const HIDE_COL=[
 "foto dokumentasi","submission ip","submission url","submission edit url",
-"last update date","submission id","janji temu","pernyataan"
+"last update date","janji temu","pernyataan"
 ];
 
-let RAW=[],HEADER=[],page=1,CID="";
+let RAW=[],HEADER=[],page=1,CID="",ID_INDEX=-1;
 
-/* ===== BASIC ===== */
+/* BASIC */
 function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
 function show(id){dash.classList.add("hidden");data.classList.add("hidden");document.getElementById(id).classList.remove("hidden")}
 function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
@@ -117,21 +115,22 @@ function getVal(h,d,k){const i=h.findIndex(x=>norm(x).includes(k));return i>-1?d
 function getDate(h,r){const i=h.findIndex(x=>norm(x).includes("submission date"));return i>-1?new Date(r[i]):null}
 function daysOld(r){const d=getDate(HEADER,r);return d?((new Date()-d)/86400000):0}
 
-/* ===== STATUS ===== */
+/* STATUS */
 function getStatus(h,d){
 const p=filled(getVal(h,d,"pemeriksa"))&&filled(getVal(h,d,"hasil periksa"))&&filled(getVal(h,d,"tanggal periksa"));
 const s=filled(getVal(h,d,"teknisi"))&&filled(getVal(h,d,"hasil penanganan"))&&filled(getVal(h,d,"tanggal penanganan"));
 if(s)return["SELESAI","green"];if(p)return["DIPERIKSA","yellow"];return["PENDING","red"];
 }
 
-/* ===== LOAD ===== */
+/* LOAD */
 async function load(){
 const r=await fetch(`${API}?action=all&key=${KEY}`);
 const j=await r.json();RAW=j.data;HEADER=j.header;
+ID_INDEX = HEADER.findIndex(h=>norm(h).includes("submissionid"));
 buildCards();buildRecent();render();
 }
 
-/* ===== DASHBOARD ===== */
+/* DASHBOARD */
 function buildCards(){
 let p=0,d=0,s=0;
 RAW.forEach(r=>{const st=getStatus(HEADER,r)[0];if(st=="SELESAI")s++;else if(st=="DIPERIKSA")d++;else p++});
@@ -146,7 +145,7 @@ const list=[...RAW].sort((a,b)=>getDate(HEADER,b)-getDate(HEADER,a)).slice(0,5);
 recentList.innerHTML=list.map(r=>`<div class="border border-slate-800 rounded-xl p-3">${r.join(" ").slice(0,90)}...</div>`).join("");
 }
 
-/* ===== TABLE ===== */
+/* TABLE */
 function render(){
 const key=norm(q.value);
 const filtered=RAW.filter(r=>!key||r.join(" ").toLowerCase().includes(key));
@@ -155,16 +154,24 @@ if(page>total)page=total||1;
 const rows=filtered.slice((page-1)*PER_PAGE,page*PER_PAGE);
 
 let h="<tr class='bg-slate-800'>";
-HEADER.forEach(x=>{if(HIDE_COL.some(v=>norm(x).includes(v)))return;h+=`<th class='p-3 text-left'>${x}</th>`});
+HEADER.forEach(x=>{
+if(norm(x).includes("submissionid")) return;
+if(HIDE_COL.some(v=>norm(x).includes(v))) return;
+h+=`<th class='p-3 text-left'>${x}</th>`;
+});
 h+="<th>Status</th><th>Aksi</th></tr>";
 
 rows.forEach(r=>{
 const[st,c]=getStatus(HEADER,r);
 const old=daysOld(r)>3 && st!=="SELESAI";
 h+=`<tr class='border-b border-slate-800 ${old?"bg-red-950/40":""}'>`;
-r.forEach((x,i)=>{if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v)))return;h+=`<td class='p-3'>${x||""}</td>`});
+r.forEach((x,i)=>{
+if(i===ID_INDEX) return;
+if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v))) return;
+h+=`<td class='p-3'>${x||""}</td>`;
+});
 h+=`<td class='p-3 text-${c}-400 font-bold'>${st} ${old?'<span class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">TERLAMBAT</span>':""}</td>`;
-h+=`<td class='p-3'><button onclick="openModal('${r[0]}')" class="text-blue-400">Kelola</button></td></tr>`;
+h+=`<td class='p-3'><button onclick="openModal('${r[ID_INDEX]}')" class="text-blue-400">Kelola</button></td></tr>`;
 });
 
 t.innerHTML=h;
@@ -174,7 +181,7 @@ pageInfo.innerText=`Halaman ${page} dari ${total} (${filtered.length} data)`;
 function nextPage(){page++;render()}
 function prevPage(){page--;if(page<1)page=1;render()}
 
-/* ===== MODAL ===== */
+/* MODAL */
 function openModal(id){CID=id;modal.classList.remove("hidden")}
 
 async function save(){

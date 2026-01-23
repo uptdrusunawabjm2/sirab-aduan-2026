@@ -5,17 +5,19 @@
 <title>Tracking Pengaduan</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gradient-to-br from-slate-950 to-slate-900 text-white min-h-screen flex items-center justify-center p-4">
 
 <div class="bg-slate-900/80 backdrop-blur p-8 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-800">
 <h1 class="text-2xl font-bold mb-2 text-center">Tracking Pengaduan</h1>
-<p class="text-center text-slate-400 mb-6 text-sm">Masukkan Submission ID dari laporan Anda</p>
+<p class="text-center text-slate-400 mb-6 text-sm">Masukkan Nomor Tiket / Submission ID</p>
 
 <input id="tid" placeholder="Contoh: 6448581113509491883"
 class="w-full p-3 rounded-xl bg-slate-800 mb-4 outline-none focus:ring-2 focus:ring-blue-600">
 
-<button onclick="track()" class="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-xl font-bold">
-CEK STATUS
+<button onclick="track()"
+class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-xl font-semibold">
+Lacak Pengaduan
 </button>
 
 <div id="res" class="mt-6"></div>
@@ -24,123 +26,36 @@ CEK STATUS
 <script>
 const API = "https://script.google.com/macros/s/AKfycbyFmS9G5xPYDyzL9l4-YCNbWgfLETiSkUlmOreWpbDYQmOXaz0wuMCEeoEZmm2-Kuvv/exec";
 
-const HIDDEN_FIELDS = [
-  "fotodokumentasi","pernyataan","submissionip",
-  "submissionurl","submissionediturl","lastupdatedate"
-];
-
-function norm(s){
-  return String(s||"").toLowerCase().replace(/[^a-z]/g,"");
-}
-
-/* ===== FORMAT TANGGAL ONLY (AMAN UNTUK DATE OBJECT & STRING) ===== */
-function onlyDate(val){
-  if(!val) return "-";
-
-  // kalau Date object
-  if(Object.prototype.toString.call(val) === "[object Date]"){
-    return val.toISOString().split("T")[0];
-  }
-
-  val = String(val);
-
-  // kalau format ISO
-  if(val.includes("T")){
-    return val.split("T")[0];
-  }
-
-  // kalau format lain, biarkan
-  return val;
-}
-
-function filled(v){
-  return v !== null && v !== undefined && String(v).trim() !== "";
-}
-
-function getVal(header,data,keyword){
-  const key = norm(keyword);
-  const idx = header.findIndex(h=>norm(h).includes(key));
-  return idx>-1 ? data[idx] : "";
-}
-
-/* ===== LOGIKA STATUS ===== */
-function getStatus(header,data){
-
-  const pemeriksa = getVal(header,data,"pemeriksa");
-  const hasilPeriksa = getVal(header,data,"hasilperiksa");
-  const tglPeriksa = getVal(header,data,"tanggalperiksa");
-
-  const teknisi = getVal(header,data,"teknisi");
-  const hasilPenanganan = getVal(header,data,"hasilpenanganan");
-  const tglPenanganan = getVal(header,data,"tanggalpenanganan");
-
-  let status = { label:"PENDING", color:"red", progress:25 };
-
-  if(filled(pemeriksa) && filled(hasilPeriksa) && filled(tglPeriksa)){
-    status = { label:"DIPERIKSA", color:"yellow", progress:60 };
-  }
-
-  if(filled(teknisi) && filled(hasilPenanganan) && filled(tglPenanganan)){
-    status = { label:"SELESAI", color:"green", progress:100 };
-  }
-
-  return status;
-}
-
 async function track(){
-  res.innerHTML = `<p class="text-slate-400">Memuat...</p>`;
   const id = tid.value.trim();
-  const r = await fetch(`${API}?track=${id}`);
-  const j = await r.json();
+  if(!id) return alert("Masukkan nomor tiket");
 
-  if(!j.found){
-    res.innerHTML = "<p class='text-red-400'>❌ Data tidak ditemukan</p>";
-    return;
-  }
+  res.innerHTML = "<p class='text-slate-400'>Mencari data...</p>";
 
-  const h = j.header;
-  const d = j.data;
-  const st = getStatus(h,d);
+  try{
+    const r = await fetch(`${API}?action=track&id=${encodeURIComponent(id)}`);
+    const j = await r.json();
 
-  const badge =
-    st.color==="green" ? "bg-green-600" :
-    st.color==="yellow" ? "bg-yellow-500 text-black" :
-    "bg-red-600";
+    if(!j.found) return res.innerHTML = "<p class='text-red-400'>Data tidak ditemukan</p>";
 
-  let html = `
-  <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 space-y-3">
-    <div class="flex justify-between items-center">
-      <h2 class="font-bold text-lg">📄 Detail Pengaduan</h2>
-      <span class="px-3 py-1 rounded-full ${badge} text-xs font-bold">${st.label}</span>
-    </div>
+    let html = `<div class="bg-slate-800 p-4 rounded-xl space-y-3">`;
 
-    <div class="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-      <div class="bg-blue-500 h-2" style="width:${st.progress}%"></div>
-    </div>
-    <p class="text-xs text-slate-400">Progress: ${st.progress}%</p>
-
-    <div class="text-sm space-y-2 mt-3">`;
-
-  h.forEach((x,i)=>{
-    const key = norm(x);
-    if(HIDDEN_FIELDS.some(f => key.includes(f))) return;
-
-    let val = d[i] || "-";
-
-    // 🔥 PAKSA TANGGAL SAJA
-    if(key.includes("tanggalperiksa") || key.includes("tanggalpenanganan")){
-      val = onlyDate(val);
-    }
-
-    html += `
+    j.header.forEach((x,i)=>{
+      const val = j.data[i] || "-";
+      html += `
       <div>
         <div class="text-slate-400 text-xs">${x}</div>
-        <div class="font-semibold">${val}</div>
+        <div class="font-semibold break-words">${val}</div>
       </div>`;
-  });
+    });
 
-  html += `</div></div>`;
-  res.innerHTML = html;
+    html += `</div>`;
+    res.innerHTML = html;
+
+  }catch(e){
+    console.error(e);
+    res.innerHTML = "<p class='text-red-400'>Gagal terhubung ke server</p>";
+  }
 }
 </script>
 </body>

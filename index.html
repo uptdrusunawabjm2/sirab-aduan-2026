@@ -24,36 +24,38 @@ CEK STATUS
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
 
-/* FIELD YANG DISEMBUNYIKAN */
 const HIDDEN_FIELDS = [
-  "foto dokumentasi",
-  "pernyataan",
-  "submission ip",
-  "submission url",
-  "submission edit url",
-  "last update date"
+  "fotodokumentasi","pernyataan","submissionip",
+  "submissionurl","submissionediturl","lastupdatedate"
 ];
+
+function norm(s){
+  return String(s||"").toLowerCase().replace(/[^a-z]/g,"");
+}
 
 function onlyDate(val){
   if(!val) return "-";
-  if(typeof val === "string" && val.includes("T")) return val.split("T")[0];
+  if(String(val).includes("T")) return String(val).split("T")[0];
   return val;
 }
 
-/* ===== LOGIKA STATUS OTOMATIS ===== */
-function getStatus(header, data){
-  const val = (name)=>{
-    const i = header.findIndex(h=>h.toLowerCase().includes(name));
-    return i > -1 ? String(data[i]||"").trim() : "";
-  };
+/* ===== AMBIL NILAI KOLOM BERDASARKAN NAMA MIRIP ===== */
+function getVal(header,data,keyword){
+  const key = norm(keyword);
+  const idx = header.findIndex(h=>norm(h).includes(key));
+  return idx>-1 ? String(data[idx]||"").trim() : "";
+}
 
-  const pemeriksa = val("pemeriksa");
-  const hasilPeriksa = val("hasil periksa");
-  const tglPeriksa = val("tanggal periksa");
+/* ===== LOGIKA STATUS OTOMATIS (FINAL) ===== */
+function getStatus(header,data){
 
-  const teknisi = val("teknisi");
-  const hasilPenanganan = val("hasil penanganan");
-  const tglPenanganan = val("tanggal penanganan");
+  const pemeriksa = getVal(header,data,"pemeriksa");
+  const hasilPeriksa = getVal(header,data,"hasilperiksa");
+  const tglPeriksa = getVal(header,data,"tanggalperiksa");
+
+  const teknisi = getVal(header,data,"teknisi");
+  const hasilPenanganan = getVal(header,data,"hasilpenanganan");
+  const tglPenanganan = getVal(header,data,"tanggalpenanganan");
 
   if(teknisi && hasilPenanganan && tglPenanganan){
     return { label:"SELESAI", color:"green", progress:100 };
@@ -81,7 +83,7 @@ async function track(){
   const d = j.data;
   const st = getStatus(h,d);
 
-  let badge =
+  const badge =
     st.color==="green" ? "bg-green-600" :
     st.color==="yellow" ? "bg-yellow-500 text-black" :
     "bg-red-600";
@@ -101,11 +103,11 @@ async function track(){
     <div class="text-sm space-y-2 mt-3">`;
 
   h.forEach((x,i)=>{
-    const label = x.toLowerCase();
-    if(HIDDEN_FIELDS.some(f => label.includes(f))) return;
+    const key = norm(x);
+    if(HIDDEN_FIELDS.some(f => key.includes(f))) return;
 
     let val = d[i] || "-";
-    if(label.includes("tanggal periksa") || label.includes("tanggal penanganan")){
+    if(key.includes("tanggalperiksa") || key.includes("tanggalpenanganan")){
       val = onlyDate(val);
     }
 

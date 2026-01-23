@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Pengaduan</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-950 text-white p-4">
+
+<script>
+if(sessionStorage.getItem("login")!=="true") location="login.html";
+</script>
+
+<h1 class="text-2xl font-bold mb-3">Dashboard Pengaduan Rusunawa</h1>
+
+<div class="flex flex-wrap gap-2 mb-4">
+  <input id="frusun" placeholder="Filter Rusunawa" class="p-2 rounded bg-slate-800">
+  <input id="ftgl" type="date" class="p-2 rounded bg-slate-800">
+  <button onclick="render()" class="bg-blue-600 px-3 rounded">Filter</button>
+  <button onclick="exportExcel()" class="bg-green-600 px-3 rounded">Excel</button>
+  <button onclick="window.print()" class="bg-orange-600 px-3 rounded">PDF</button>
+  <button onclick="logout()" class="bg-red-600 px-3 rounded">Logout</button>
+</div>
+
+<div class="grid grid-cols-3 gap-3 mb-4">
+  <div class="bg-slate-800 p-3 rounded">Total Aduan<br><b id="total">0</b></div>
+  <div class="bg-slate-800 p-3 rounded">Masuk<br><b id="masuk">0</b></div>
+  <div class="bg-slate-800 p-3 rounded">Selesai<br><b id="selesai">0</b></div>
+</div>
+
+<canvas id="chart" height="90"></canvas>
+
+<div class="overflow-auto mt-4">
+<table class="w-full text-sm border border-slate-700">
+<thead class="bg-slate-800">
+<tr>
+<th class="p-2 border">Tanggal</th>
+<th class="p-2 border">No Tiket</th>
+<th class="p-2 border">Rusun</th>
+<th class="p-2 border">Nama</th>
+<th class="p-2 border">Unit</th>
+<th class="p-2 border">Laporan</th>
+<th class="p-2 border">Foto</th>
+<th class="p-2 border">Status</th>
+<th class="p-2 border">Cetak</th>
+</tr>
+</thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
+
+<script>
+const API="ISI_URL_WEBAPP_ANDA";
+let RAW=[], CHART;
+
+async function load(){
+  const r = await fetch(API);
+  const j = await r.json();
+  RAW = j.data;
+  render();
+}
+
+function render(){
+  let rus = frusun.value.toLowerCase();
+  let tgl = ftgl.value;
+
+  let f = RAW.filter(r=>{
+    let ok=true;
+    if(rus) ok = r[2].toLowerCase().includes(rus);
+    if(ok && tgl) ok = new Date(r[0]).toISOString().slice(0,10)==tgl;
+    return ok;
+  });
+
+  let masuk=0, selesai=0;
+  tb.innerHTML="";
+
+  f.slice().reverse().forEach((r,i)=>{
+    if(r[10]=="MASUK") masuk++;
+    if(r[10]=="SELESAI") selesai++;
+
+    tb.innerHTML+=`
+    <tr class="odd:bg-slate-900">
+      <td class="p-1 border">${r[0]}</td>
+      <td class="p-1 border font-bold">${r[1]}</td>
+      <td class="p-1 border">${r[2]}</td>
+      <td class="p-1 border">${r[3]}</td>
+      <td class="p-1 border">${r[4]}</td>
+      <td class="p-1 border">${r[5]}</td>
+      <td class="p-1 border">${r[7]?`<a class="text-blue-400" target="_blank" href="${r[7]}">Lihat</a>`:"-"}</td>
+      <td class="p-1 border">
+        <select onchange="setStatus(${RAW.length-i},this.value,this)" class="p-1 rounded font-bold">
+          <option ${r[10]=="MASUK"?"selected":""}>MASUK</option>
+          <option ${r[10]=="PROSES"?"selected":""}>PROSES</option>
+          <option ${r[10]=="SELESAI"?"selected":""}>SELESAI</option>
+        </select>
+      </td>
+      <td class="p-1 border text-center">
+        <button onclick='cetak(${JSON.stringify(r)})' class="bg-indigo-600 px-2 py-1 rounded text-xs">CETAK</button>
+      </td>
+    </tr>`;
+  });
+
+  total.innerText=f.length;
+  masukEl.innerText=masuk;
+  selesaiEl.innerText=selesai;
+
+  drawChart(masuk, selesai, f.length-masuk-selesai);
+  setTimeout(()=>document.querySelectorAll("select").forEach(s=>colorize(s)),200);
+}
+
+function setStatus(row,status,el){
+  fetch(API,{method:"POST",body:JSON.stringify({action:"status",row,status})});
+  colorize(el);
+}
+
+function colorize(sel){
+  if(sel.value=="MASUK") sel.className="bg-red-600 text-white p-1 rounded font-bold";
+  if(sel.value=="PROSES") sel.className="bg-yellow-400 text-black p-1 rounded font-bold";
+  if(sel.value=="SELESAI") sel.className="bg-green-600 text-white p-1 rounded font-bold";
+}
+
+function drawChart(masuk, selesai, proses){
+  if(CHART) CHART.destroy();
+  CHART = new Chart(chart,{
+    type:'doughnut',
+    data:{labels:['Masuk','Selesai','Proses'],datasets:[{data:[masuk,selesai,proses]}]}
+  });
+}
+
+function exportExcel(){
+  let csv="Tanggal,Tiket,Rusun,Nama,Unit,Laporan,Status\n";
+  RAW.forEach(r=>{
+    csv+=`"${r[0]}","${r[1]}","${r[2]}","${r[3]}","${r[4]}","${r[5]}","${r[10]}"\n`;
+  });
+  let blob=new Blob([csv],{type:"text/csv"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="pengaduan.csv";
+  a.click();
+}
+
+function cetak(r){
+  let w = window.open("","_blank");
+  w.document.write(`
+  <html><head><title>Kartu Pengaduan</title>
+  <style>
+  body{font-family:Arial;padding:20px}
+  .card{border:2px solid #000;border-radius:10px;padding:20px;width:350px}
+  h2{text-align:center}
+  </style>
+  </head><body onload="window.print()">
+  <div class="card">
+    <h2>KARTU PENGADUAN</h2>
+    <p><b>No Tiket:</b> ${r[1]}</p>
+    <p><b>Nama:</b> ${r[3]}</p>
+    <p><b>Rusun:</b> ${r[2]}</p>
+    <p><b>Unit:</b> ${r[4]}</p>
+    <p><b>No HP:</b> ${r[6]}</p>
+    <p><b>Laporan:</b><br>${r[5]}</p>
+    <p><b>Status:</b> ${r[10]}</p>
+    <br>
+    <p>Petugas: __________________</p>
+    <p>Tanggal: __________________</p>
+  </div>
+  </body></html>
+  `);
+  w.document.close();
+}
+
+function logout(){
+  sessionStorage.clear();
+  location="login.html";
+}
+
+load();
+</script>
+</body>
+</html>

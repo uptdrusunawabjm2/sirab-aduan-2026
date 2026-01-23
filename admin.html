@@ -10,29 +10,37 @@
 <body class="bg-slate-950 text-white min-h-screen flex">
 
 <!-- SIDEBAR -->
-<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-4 transition-all duration-300">
-  <div class="text-xl font-bold">Admin Panel</div>
-  <button onclick="toggleSidebar()" class="text-xs text-slate-400 hover:text-white">☰ Sembunyikan</button>
-  <div class="space-y-2 text-sm">
+<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300">
+
+  <div class="p-4 border-b border-slate-800">
+    <div class="text-xl font-bold">Admin Panel</div>
+    <div class="text-xs text-slate-400">Pengaduan Rusunawa</div>
+  </div>
+
+  <div class="flex-1 p-4 space-y-2 text-sm">
     <div class="p-2 rounded bg-slate-800">📋 Data Aduan</div>
   </div>
+
+  <div class="p-4 border-t border-slate-800">
+    <button onclick="logout()" class="w-full bg-red-600/20 text-red-400 border border-red-600 px-3 py-2 rounded hover:bg-red-600 hover:text-white transition">
+      🚪 Logout
+    </button>
+  </div>
+
 </div>
 
 <!-- MAIN -->
 <div class="flex-1 flex flex-col">
 
-<!-- TOPBAR -->
-<div class="bg-slate-900 border-b border-slate-800 p-3 flex justify-between items-center">
+<div class="bg-slate-900 border-b border-slate-800 p-3 flex items-center gap-3">
   <button onclick="toggleSidebar()" class="bg-slate-800 px-3 py-1 rounded">☰</button>
-  <div class="font-semibold">Dashboard Admin Aduan</div>
-  <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded text-sm">Logout</button>
+  <div class="font-semibold flex-1 text-center">Dashboard Admin Aduan</div>
 </div>
 
-<!-- CONTENT -->
 <div class="p-4 space-y-4">
 
 <!-- REKAP -->
-<div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="rekap">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
     <div class="text-slate-400 text-sm">Total Aduan</div>
     <div id="rTotal" class="text-2xl font-bold">0</div>
@@ -51,8 +59,8 @@
   </div>
 </div>
 
-<!-- FILTER -->
-<div class="grid md:grid-cols-3 gap-2">
+<!-- FILTER + EXPORT -->
+<div class="grid md:grid-cols-4 gap-2">
   <input id="search" oninput="renderTable()" placeholder="🔍 Cari aduan..."
     class="p-2 rounded bg-slate-800 border border-slate-700">
   <select id="filterStatus" onchange="renderTable()"
@@ -62,6 +70,11 @@
     <option value="DIPERIKSA">Diperiksa</option>
     <option value="SELESAI">Selesai</option>
   </select>
+
+  <button onclick="exportExcel()"
+    class="bg-emerald-600 hover:bg-emerald-700 transition rounded px-4 py-2 font-semibold">
+    📤 Export Excel
+  </button>
 </div>
 
 <!-- TABLE -->
@@ -105,7 +118,7 @@ const key = sessionStorage.getItem("adminKey");
 if(!key) location.href="login.html";
 
 let HEAD=[], DATA=[], SID="";
-const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN"];
+const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status"];
 
 load();
 
@@ -138,10 +151,20 @@ function hitungRekap(){
   rSelesai.textContent=s;
 }
 
-function renderTable(){
+function getVisibleRows(){
   const q=search.value.toLowerCase();
   const f=filterStatus.value;
+  return DATA.filter(r=>{
+    const txt=r.join(" ").toLowerCase();
+    const st=getStatus(r);
+    if(q && !txt.includes(q)) return false;
+    if(f && st!==f) return false;
+    return true;
+  });
+}
 
+function renderTable(){
+  const rows = getVisibleRows();
   let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
 
   let h="<tr class='bg-slate-800 sticky top-0'>";
@@ -149,15 +172,10 @@ function renderTable(){
   h+="<th class='p-2 border border-slate-700 text-center'>STATUS</th>";
   h+="<th class='p-2 border border-slate-700 text-center'>AKSI</th></tr>";
 
-  DATA.forEach(r=>{
-    const txt=r.join(" ").toLowerCase();
+  rows.forEach(r=>{
     const st=getStatus(r);
-    if(q && !txt.includes(q)) return;
-    if(f && st!==f) return;
-
     h+="<tr class='hover:bg-slate-800'>";
     cols.forEach(c=>h+=`<td class="p-2 border border-slate-800">${r[c.i]||""}</td>`);
-
     h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td>`;
     h+=`<td class="p-2 border border-slate-800 text-center">
       <button onclick='openModal(${JSON.stringify(r)})'
@@ -172,6 +190,30 @@ function badge(st){
   if(st==="DIPERIKSA") return `<span class="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-xs">DIPERIKSA</span>`;
   return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
 }
+
+/* ========== EXPORT EXCEL ========== */
+function exportExcel(){
+  let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
+  let rows = getVisibleRows();
+
+  let csv = [];
+  csv.push(cols.map(c=>`"${c.h}"`).join(",") + ',"STATUS"');
+
+  rows.forEach(r=>{
+    let line = cols.map(c=>`"${String(r[c.i]||"").replace(/"/g,'""')}"`).join(",");
+    line += `,"${getStatus(r)}"`;
+    csv.push(line);
+  });
+
+  const blob = new Blob([csv.join("\n")],{type:"text/csv;charset=utf-8;"});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+
+  const d = new Date().toISOString().slice(0,10);
+  link.download = `laporan-aduan-${d}.csv`;
+  link.click();
+}
+/* ================================== */
 
 function openModal(row){
   const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);

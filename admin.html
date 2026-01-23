@@ -3,140 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <title>Dashboard Admin Aduan</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-white min-h-screen">
 
-<div class="p-4 flex justify-between items-center bg-slate-900 shadow">
-  <h1 class="text-lg font-bold">Dashboard Admin Aduan</h1>
+<body class="bg-slate-950 text-white min-h-screen flex">
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-4 transition-all duration-300">
+  <div class="text-xl font-bold">Admin Panel</div>
+  <button onclick="toggleSidebar()" class="text-xs text-slate-400 hover:text-white">☰ Sembunyikan</button>
+  <div class="space-y-2 text-sm">
+    <div class="p-2 rounded bg-slate-800">📋 Data Aduan</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="flex-1 flex flex-col">
+
+<!-- TOPBAR -->
+<div class="bg-slate-900 border-b border-slate-800 p-3 flex justify-between items-center">
+  <button onclick="toggleSidebar()" class="bg-slate-800 px-3 py-1 rounded">☰</button>
+  <div class="font-semibold">Dashboard Admin Aduan</div>
   <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded text-sm">Logout</button>
 </div>
 
-<div class="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+<!-- CONTENT -->
+<div class="p-4 space-y-4">
 
-  <div class="lg:col-span-2 bg-slate-900 p-3 rounded overflow-auto max-h-[80vh]">
-    <table class="w-full text-xs border border-slate-700" id="tabel"></table>
-  </div>
+<!-- FILTER -->
+<div class="grid md:grid-cols-3 gap-2">
+  <input id="search" oninput="renderTable()" placeholder="🔍 Cari data..."
+    class="p-2 rounded bg-slate-800 border border-slate-700">
+  <select id="filterStatus" onchange="renderTable()"
+    class="p-2 rounded bg-slate-800 border border-slate-700">
+    <option value="">Semua Status</option>
+    <option value="PENDING">Pending</option>
+    <option value="DIPERIKSA">Diperiksa</option>
+    <option value="SELESAI">Selesai</option>
+  </select>
+</div>
 
-  <div class="bg-slate-900 p-4 rounded space-y-2">
-    <h2 class="font-bold mb-2">Update Aduan</h2>
+<!-- TABLE -->
+<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[70vh]">
+  <table class="w-full text-xs" id="table"></table>
+</div>
 
-    <input id="id" placeholder="Submission ID" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
+</div>
+</div>
 
-    <input id="pemeriksa" placeholder="Pemeriksa" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-    <input id="tglPeriksa" type="date" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-    <textarea id="hasilPeriksa" placeholder="Hasil Periksa" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
+<!-- MODAL -->
+<div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
 
-    <input id="teknisi" placeholder="Teknisi" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-    <input id="tglPenanganan" type="date" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-    <textarea id="hasilPenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
+<h2 class="text-lg font-bold">Update Aduan</h2>
+<div class="text-xs text-slate-400" id="mid"></div>
 
-    <select id="status" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-      <option value="">Pilih Status</option>
-      <option>Baru</option>
-      <option>Proses</option>
-      <option>Selesai</option>
-    </select>
+<input id="pemeriksa" placeholder="Pemeriksa" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
+<input id="tglPeriksa" type="date" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
+<textarea id="hasilPeriksa" placeholder="Hasil Periksa" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
 
-    <textarea id="catatan" placeholder="Catatan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
+<input id="teknisi" placeholder="Teknisi" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
+<input id="tglPenanganan" type="date" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
+<textarea id="hasilPenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
 
-    <input id="foto" type="file" accept="image/*" class="w-full text-xs">
+<textarea id="catatan" placeholder="Catatan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
+<input id="foto" type="file" accept="image/*" class="text-xs">
 
-    <button onclick="simpan()" class="w-full bg-blue-600 py-2 rounded mt-2">Simpan</button>
+<div class="flex gap-2 pt-2">
+  <button onclick="simpan()" class="flex-1 bg-blue-600 p-2 rounded">Simpan</button>
+  <button onclick="closeModal()" class="flex-1 bg-slate-700 p-2 rounded">Batal</button>
+</div>
 
-    <div id="msg" class="text-sm text-center mt-2"></div>
-  </div>
-
+<div id="msg" class="text-center text-sm"></div>
+</div>
 </div>
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const key = sessionStorage.getItem("adminKey");
+if(!key) location.href="login.html";
 
-if (!key) location.href = "login.html";
+let HEAD=[], DATA=[], SID="";
 
-loadData();
+load();
 
-async function loadData() {
-  const res = await fetch(`${API}?action=all&key=${key}`);
-  const json = await res.json();
-  renderTable(json.header, json.data);
+async function load(){
+  const r = await fetch(`${API}?action=all&key=${key}`);
+  const j = await r.json();
+  HEAD=j.header; DATA=j.data;
+  renderTable();
 }
 
-function renderTable(header, data) {
-  let html = "<tr class='bg-slate-800'>";
-  header.forEach(h => html += `<th class='border border-slate-700 p-1'>${h}</th>`);
-  html += "</tr>";
+function getStatus(row){
+  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
+  if(m["Teknisi"]&&m["Tanggal Penanganan"]&&m["Hasil Penanganan"]) return "SELESAI";
+  if(m["Pemeriksa"]&&m["Tanggal Periksa"]&&m["Hasil Periksa"]) return "DIPERIKSA";
+  return "PENDING";
+}
 
-  data.forEach(r => {
-    html += "<tr class='hover:bg-slate-800 cursor-pointer' onclick='pilih(this)'>";
-    r.forEach(c => html += `<td class='border border-slate-700 p-1'>${c || ""}</td>`);
-    html += "</tr>";
+function renderTable(){
+  const q=search.value.toLowerCase();
+  const f=filterStatus.value;
+
+  let h="<tr class='bg-slate-800 sticky top-0'>";
+  HEAD.forEach(x=>h+=`<th class="p-2 border border-slate-700">${x}</th>`);
+  h+="<th class='p-2 border border-slate-700'>AKSI</th></tr>";
+
+  DATA.forEach(r=>{
+    const txt=r.join(" ").toLowerCase();
+    const st=getStatus(r);
+    if(q && !txt.includes(q)) return;
+    if(f && st!==f) return;
+
+    h+="<tr class='hover:bg-slate-800'>";
+    r.forEach(c=>h+=`<td class="p-1 border border-slate-800">${c||""}</td>`);
+    h+=`<td class="p-1 border border-slate-800 text-center">
+      <button onclick='openModal(${JSON.stringify(r)})'
+      class="bg-blue-600 px-2 py-1 rounded text-xs">Aksi</button></td></tr>`;
   });
 
-  document.getElementById("tabel").innerHTML = html;
+  table.innerHTML=h;
 }
 
-function pilih(tr) {
-  const td = tr.children;
-  document.getElementById("id").value = td[8].innerText;
+function openModal(row){
+  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
+  SID=m["Submission ID"];
+  mid.textContent="Submission ID: "+SID;
+
+  pemeriksa.value=m["Pemeriksa"]||"";
+  hasilPeriksa.value=m["Hasil Periksa"]||"";
+  teknisi.value=m["Teknisi"]||"";
+  hasilPenanganan.value=m["Hasil Penanganan"]||"";
+  catatan.value=m["Catatan"]||"";
+  tglPeriksa.value=format(m["Tanggal Periksa"]);
+  tglPenanganan.value=format(m["Tanggal Penanganan"]);
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
-async function simpan() {
-  const msg = document.getElementById("msg");
-  msg.textContent = "Menyimpan...";
+function closeModal(){
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  foto.value="";
+  msg.textContent="";
+}
 
-  const file = document.getElementById("foto").files[0];
-  let base64 = "", name = "", type = "";
-
-  if (file) {
-    base64 = await toBase64(file);
-    base64 = base64.split(",")[1];
-    name = file.name;
-    type = file.type;
+async function simpan(){
+  msg.textContent="Menyimpan...";
+  let file=foto.files[0], b64="", name="", type="";
+  if(file){
+    b64=await toBase64(file); b64=b64.split(",")[1];
+    name=file.name; type=file.type;
   }
 
-  const body = {
-    action: "update",
-    key,
-    id: id.value,
-    pemeriksa: pemeriksa.value,
-    hasilPeriksa: hasilPeriksa.value,
-    tglPeriksa: tglPeriksa.value,
-    teknisi: teknisi.value,
-    hasilPenanganan: hasilPenanganan.value,
-    tglPenanganan: tglPenanganan.value,
-    status: status.value,
-    catatan: catatan.value,
-    file: base64,
-    filename: name,
-    mimeType: type
+  const body={
+    action:"update", key, id:SID,
+    pemeriksa:pemeriksa.value,
+    hasilPeriksa:hasilPeriksa.value,
+    tglPeriksa:tglPeriksa.value,
+    teknisi:teknisi.value,
+    hasilPenanganan:hasilPenanganan.value,
+    tglPenanganan:tglPenanganan.value,
+    catatan:catatan.value,
+    file:b64, filename:name, mimeType:type
   };
 
-  const res = await fetch(API, { method: "POST", body: JSON.stringify(body) });
-  const json = await res.json();
+  const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
+  const j=await r.json();
 
-  if (json.success) {
-    msg.textContent = "Berhasil disimpan.";
-    loadData();
-  } else {
-    msg.textContent = "Gagal menyimpan.";
-  }
+  if(j.success){ msg.textContent="✅ Berhasil"; load(); setTimeout(closeModal,800); }
+  else msg.textContent="❌ Gagal";
 }
 
-function toBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = e => rej(e);
-    r.readAsDataURL(file);
-  });
-}
-
-function logout() {
-  sessionStorage.clear();
-  location.href = "login.html";
-}
+function toBase64(f){ return new Promise(res=>{const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f);});}
+function format(v){ if(!v) return ""; const d=new Date(v); return isNaN(d)?"":d.toISOString().split("T")[0];}
+function toggleSidebar(){ sidebar.classList.toggle("w-64"); sidebar.classList.toggle("w-0"); sidebar.classList.toggle("overflow-hidden");}
+function logout(){ sessionStorage.clear(); location.href="login.html"; }
 </script>
 </body>
 </html>

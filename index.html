@@ -7,21 +7,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
   body {
     min-height: 100vh;
     min-height: 100svh;
   }
-  .mobile-full {
-    min-height: 100vh;
-    min-height: 100svh;
-  }
 </style>
 </head>
 
-<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white mobile-full flex items-center justify-center p-3">
+<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white min-h-screen flex items-center justify-center p-3">
 
 <div class="w-full max-w-3xl bg-slate-900/90 backdrop-blur border border-slate-800 rounded-2xl shadow-xl p-5">
 
@@ -49,11 +44,7 @@
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
-
-/* ===== AUTO FULLSCREEN DI HP ===== */
-if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-  document.body.classList.add("mobile-full");
-}
+const TRACKING_URL = "URL_HALAMAN_TRACKING_ANDA"; // contoh: https://tracking-rusun.vercel.app
 
 async function cek() {
   const id = ticket.value.trim();
@@ -107,14 +98,18 @@ function renderStatus(header, row){
   statusBar.classList.remove("hidden");
 }
 
-/* ===== UI RENDER ===== */
+/* ===== UI ===== */
 function renderUI(header, row){
   const map = {}; header.forEach((h,i)=>map[h]=row[i]);
+  const id = map["Submission ID"];
+
+  const qrLink = `${TRACKING_URL}?ticket=${encodeURIComponent(id)}`;
+  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrLink)}`;
 
   hasil.innerHTML = `
     <div class="md:col-span-2 bg-slate-800 rounded-xl p-4 space-y-2">
       <div class="text-xs text-slate-400">Submission ID</div>
-      <div class="font-mono text-lg text-blue-400 mb-3 break-all">${map["Submission ID"]||""}</div>
+      <div class="font-mono text-lg text-blue-400 mb-3 break-all">${id||""}</div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
         ${item("RUSUNAWA", map["RUSUNAWA"])}
@@ -142,19 +137,12 @@ function renderUI(header, row){
 
     <div class="bg-slate-800 rounded-xl p-4 flex flex-col items-center justify-center">
       <div class="text-sm text-slate-400 mb-2">QR Code Aduan</div>
-      <div id="qrcode" class="bg-white p-3 rounded-xl"></div>
+      <img src="${qrImg}" class="bg-white p-2 rounded-xl" alt="QR Aduan">
       <div class="text-xs text-slate-400 mt-3 text-center">
-        Scan QR ini untuk membuka tracking aduan
+        Scan QR ini untuk membuka halaman tracking
       </div>
     </div>
   `;
-
-  document.getElementById("qrcode").innerHTML = "";
-  new QRCode(document.getElementById("qrcode"), {
-    text: map["Submission ID"],
-    width: 180,
-    height: 180
-  });
 }
 
 /* ===== HELPERS ===== */

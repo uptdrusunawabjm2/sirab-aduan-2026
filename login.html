@@ -10,57 +10,41 @@
 <body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
 
 <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-800">
-  <h1 class="text-xl font-bold text-center mb-6">LOGIN ADMIN</h1>
+<h1 class="text-xl font-bold text-center mb-6">LOGIN ADMIN</h1>
 
-  <input id="user" type="text" placeholder="Username"
-    class="w-full mb-3 px-4 py-2 rounded-lg bg-slate-800 outline-none">
+<input id="user" placeholder="Username"
+class="w-full mb-3 px-4 py-2 rounded-lg bg-slate-800 outline-none">
 
-  <input id="pass" type="password" placeholder="Password"
-    class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-800 outline-none">
+<input id="pass" type="password" placeholder="Password"
+class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-800 outline-none">
 
-  <button onclick="login()"
-    class="w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg font-semibold">
-    LOGIN
-  </button>
+<button onclick="login()"
+class="w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg font-semibold">
+LOGIN
+</button>
 
-  <p id="msg" class="text-center text-sm text-red-500 mt-4 hidden"></p>
+<p id="msg" class="text-center text-sm text-red-500 mt-4 hidden"></p>
 </div>
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbyFmS9G5xPYDyzL9l4-YCNbWgfLETiSkUlmOreWpbDYQmOXaz0wuMCEeoEZmm2-Kuvv/exec";
 
 async function login(){
-  const u = user.value.trim();
-  const p = pass.value.trim();
   msg.classList.add("hidden");
 
-  if(!u || !p){
-    show("Username dan password wajib diisi");
-    return;
-  }
-
   try{
-    const res = await fetch(`${API}?action=login&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`);
-    const text = await res.text();
+    const r = await fetch(`${API}?action=login&u=${user.value}&p=${pass.value}`);
+    const j = await r.json();
 
-    let data;
-    try{
-      data = JSON.parse(text);
-    }catch{
-      console.error("Respon bukan JSON:", text);
-      show("API tidak mengirim JSON (cek URL Apps Script)");
-      return;
-    }
-
-    if(data.success){
-      sessionStorage.setItem("ADMIN_LOGIN","1");
-      location.href = "admin.html";
+    if(j.success){
+      sessionStorage.setItem("login","true");
+      location.href="admin.html";
     }else{
-      show(data.error || "Login gagal");
+      show("Username / Password salah");
     }
 
-  }catch(err){
-    console.error(err);
+  }catch(e){
+    console.error(e);
     show("Gagal terhubung ke server");
   }
 }
@@ -70,6 +54,5 @@ function show(t){
   msg.classList.remove("hidden");
 }
 </script>
-
 </body>
 </html>

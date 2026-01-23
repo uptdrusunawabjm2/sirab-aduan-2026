@@ -85,7 +85,7 @@
 </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL (tetap sama, tidak diubah) -->
 <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
 
@@ -151,6 +151,13 @@ function hitungRekap(){
   rSelesai.textContent=s;
 }
 
+function formatTanggal(val){
+  if(!val) return "";
+  const d=new Date(val);
+  if(isNaN(d)) return val;
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+}
+
 function getVisibleRows(){
   const q=search.value.toLowerCase();
   const f=filterStatus.value;
@@ -175,7 +182,13 @@ function renderTable(){
   rows.forEach(r=>{
     const st=getStatus(r);
     h+="<tr class='hover:bg-slate-800'>";
-    cols.forEach(c=>h+=`<td class="p-2 border border-slate-800">${r[c.i]||""}</td>`);
+    cols.forEach(c=>{
+      let val = r[c.i] || "";
+      if(c.h==="Submission Date" || c.h==="Tanggal Periksa" || c.h==="Tanggal Penanganan"){
+        val = formatTanggal(val);
+      }
+      h+=`<td class="p-2 border border-slate-800 align-top">${val}</td>`;
+    });
     h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td>`;
     h+=`<td class="p-2 border border-slate-800 text-center">
       <button onclick='openModal(${JSON.stringify(r)})'
@@ -191,7 +204,7 @@ function badge(st){
   return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
 }
 
-/* ========== EXPORT EXCEL ========== */
+/* EXPORT CSV (EXCEL) */
 function exportExcel(){
   let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
   let rows = getVisibleRows();
@@ -200,7 +213,13 @@ function exportExcel(){
   csv.push(cols.map(c=>`"${c.h}"`).join(",") + ',"STATUS"');
 
   rows.forEach(r=>{
-    let line = cols.map(c=>`"${String(r[c.i]||"").replace(/"/g,'""')}"`).join(",");
+    let line = cols.map(c=>{
+      let v=r[c.i]||"";
+      if(c.h==="Submission Date"||c.h==="Tanggal Periksa"||c.h==="Tanggal Penanganan"){
+        v=formatTanggal(v);
+      }
+      return `"${String(v).replace(/"/g,'""')}"`;
+    }).join(",");
     line += `,"${getStatus(r)}"`;
     csv.push(line);
   });
@@ -208,12 +227,10 @@ function exportExcel(){
   const blob = new Blob([csv.join("\n")],{type:"text/csv;charset=utf-8;"});
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-
   const d = new Date().toISOString().slice(0,10);
   link.download = `laporan-aduan-${d}.csv`;
   link.click();
 }
-/* ================================== */
 
 function openModal(row){
   const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
@@ -225,11 +242,17 @@ function openModal(row){
   teknisi.value=m["Teknisi"]||"";
   hasilPenanganan.value=m["Hasil Penanganan"]||"";
   catatan.value=m["Catatan"]||"";
-  tglPeriksa.value=format(m["Tanggal Periksa"]);
-  tglPenanganan.value=format(m["Tanggal Penanganan"]);
+  tglPeriksa.value=toInputDate(m["Tanggal Periksa"]);
+  tglPenanganan.value=toInputDate(m["Tanggal Penanganan"]);
 
   modal.classList.remove("hidden");
   modal.classList.add("flex");
+}
+
+function toInputDate(v){
+  if(!v) return "";
+  const d=new Date(v); if(isNaN(d)) return "";
+  return d.toISOString().split("T")[0];
 }
 
 function closeModal(){
@@ -267,7 +290,6 @@ async function simpan(){
 }
 
 function toBase64(f){ return new Promise(res=>{const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f);});}
-function format(v){ if(!v) return ""; const d=new Date(v); return isNaN(d)?"":d.toISOString().split("T")[0];}
 function toggleSidebar(){ sidebar.classList.toggle("w-64"); sidebar.classList.toggle("w-0"); sidebar.classList.toggle("overflow-hidden");}
 function logout(){ sessionStorage.clear(); location.href="login.html"; }
 </script>

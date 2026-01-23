@@ -2,60 +2,71 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Tracking Pengaduan</title>
+<title>Tracking Aduan Rusunawa</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center">
 
-<body class="bg-gradient-to-br from-slate-950 to-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+<div class="bg-slate-900 p-6 rounded-xl w-full max-w-xl shadow">
+  <h1 class="text-xl font-bold mb-4 text-center">Tracking Aduan Rusunawa</h1>
 
-<div class="bg-slate-900/80 backdrop-blur p-8 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-800">
-<h1 class="text-2xl font-bold mb-2 text-center">Tracking Pengaduan</h1>
-<p class="text-center text-slate-400 mb-6 text-sm">Masukkan Nomor Tiket / Submission ID</p>
+  <div class="flex gap-2 mb-4">
+    <input id="ticket" type="text" placeholder="Masukkan Submission ID"
+      class="w-full p-2 rounded bg-slate-800 border border-slate-700">
+    <button onclick="cek()" class="bg-blue-600 px-4 rounded hover:bg-blue-700">
+      Cek
+    </button>
+  </div>
 
-<input id="tid" placeholder="Contoh: 6448581113509491883"
-class="w-full p-3 rounded-xl bg-slate-800 mb-4 outline-none focus:ring-2 focus:ring-blue-600">
-
-<button onclick="track()"
-class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-xl font-semibold">
-Lacak Pengaduan
-</button>
-
-<div id="res" class="mt-6"></div>
+  <div id="hasil" class="hidden bg-slate-800 p-4 rounded text-sm space-y-1"></div>
+  <div id="msg" class="text-center text-red-400 text-sm"></div>
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbyFmS9G5xPYDyzL9l4-YCNbWgfLETiSkUlmOreWpbDYQmOXaz0wuMCEeoEZmm2-Kuvv/exec";
+const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 
-async function track(){
-  const id = tid.value.trim();
-  if(!id) return alert("Masukkan nomor tiket");
+async function cek() {
+  const id = document.getElementById("ticket").value.trim();
+  const hasil = document.getElementById("hasil");
+  const msg = document.getElementById("msg");
 
-  res.innerHTML = "<p class='text-slate-400'>Mencari data...</p>";
+  hasil.classList.add("hidden");
+  msg.textContent = "Memuat...";
 
-  try{
-    const r = await fetch(`${API}?action=track&id=${encodeURIComponent(id)}`);
-    const j = await r.json();
-
-    if(!j.found) return res.innerHTML = "<p class='text-red-400'>Data tidak ditemukan</p>";
-
-    let html = `<div class="bg-slate-800 p-4 rounded-xl space-y-3">`;
-
-    j.header.forEach((x,i)=>{
-      const val = j.data[i] || "-";
-      html += `
-      <div>
-        <div class="text-slate-400 text-xs">${x}</div>
-        <div class="font-semibold break-words">${val}</div>
-      </div>`;
-    });
-
-    html += `</div>`;
-    res.innerHTML = html;
-
-  }catch(e){
-    console.error(e);
-    res.innerHTML = "<p class='text-red-400'>Gagal terhubung ke server</p>";
+  if (!id) {
+    msg.textContent = "Submission ID wajib diisi.";
+    return;
   }
+
+  try {
+    const res = await fetch(`${API}?action=track&id=${encodeURIComponent(id)}`);
+    const json = await res.json();
+
+    if (!json.found) {
+      msg.textContent = "Data tidak ditemukan.";
+      return;
+    }
+
+    msg.textContent = "";
+    hasil.innerHTML = render(json.header, json.data);
+    hasil.classList.remove("hidden");
+
+  } catch (e) {
+    msg.textContent = "Gagal menghubungi server.";
+  }
+}
+
+function render(header, row) {
+  let html = "";
+  header.forEach((h, i) => {
+    if (!row[i]) return;
+    if (h.toLowerCase().includes("foto")) {
+      html += `<div><b>${h}:</b><br><a href="${row[i]}" target="_blank" class="text-blue-400 underline">Lihat Foto</a></div>`;
+    } else {
+      html += `<div><b>${h}:</b> ${row[i]}</div>`;
+    }
+  });
+  return html;
 }
 </script>
 </body>

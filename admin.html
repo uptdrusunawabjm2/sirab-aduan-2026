@@ -31,9 +31,29 @@
 <!-- CONTENT -->
 <div class="p-4 space-y-4">
 
+<!-- REKAP -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="rekap">
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+    <div class="text-slate-400 text-sm">Total Aduan</div>
+    <div id="rTotal" class="text-2xl font-bold">0</div>
+  </div>
+  <div class="bg-yellow-500/20 border border-yellow-500 rounded-xl p-4">
+    <div class="text-yellow-300 text-sm">Pending</div>
+    <div id="rPending" class="text-2xl font-bold text-yellow-400">0</div>
+  </div>
+  <div class="bg-blue-600/20 border border-blue-600 rounded-xl p-4">
+    <div class="text-blue-300 text-sm">Diperiksa</div>
+    <div id="rPeriksa" class="text-2xl font-bold text-blue-400">0</div>
+  </div>
+  <div class="bg-green-600/20 border border-green-600 rounded-xl p-4">
+    <div class="text-green-300 text-sm">Selesai</div>
+    <div id="rSelesai" class="text-2xl font-bold text-green-400">0</div>
+  </div>
+</div>
+
 <!-- FILTER -->
 <div class="grid md:grid-cols-3 gap-2">
-  <input id="search" oninput="renderTable()" placeholder="🔍 Cari data..."
+  <input id="search" oninput="renderTable()" placeholder="🔍 Cari aduan..."
     class="p-2 rounded bg-slate-800 border border-slate-700">
   <select id="filterStatus" onchange="renderTable()"
     class="p-2 rounded bg-slate-800 border border-slate-700">
@@ -45,8 +65,8 @@
 </div>
 
 <!-- TABLE -->
-<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[70vh]">
-  <table class="w-full text-xs" id="table"></table>
+<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[65vh]">
+  <table class="w-full text-sm" id="table"></table>
 </div>
 
 </div>
@@ -85,6 +105,7 @@ const key = sessionStorage.getItem("adminKey");
 if(!key) location.href="login.html";
 
 let HEAD=[], DATA=[], SID="";
+const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN"];
 
 load();
 
@@ -92,6 +113,7 @@ async function load(){
   const r = await fetch(`${API}?action=all&key=${key}`);
   const j = await r.json();
   HEAD=j.header; DATA=j.data;
+  hitungRekap();
   renderTable();
 }
 
@@ -102,13 +124,30 @@ function getStatus(row){
   return "PENDING";
 }
 
+function hitungRekap(){
+  let p=0,d=0,s=0;
+  DATA.forEach(r=>{
+    const st=getStatus(r);
+    if(st==="PENDING") p++;
+    else if(st==="DIPERIKSA") d++;
+    else if(st==="SELESAI") s++;
+  });
+  rTotal.textContent=DATA.length;
+  rPending.textContent=p;
+  rPeriksa.textContent=d;
+  rSelesai.textContent=s;
+}
+
 function renderTable(){
   const q=search.value.toLowerCase();
   const f=filterStatus.value;
 
+  let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
+
   let h="<tr class='bg-slate-800 sticky top-0'>";
-  HEAD.forEach(x=>h+=`<th class="p-2 border border-slate-700">${x}</th>`);
-  h+="<th class='p-2 border border-slate-700'>AKSI</th></tr>";
+  cols.forEach(c=>h+=`<th class="p-2 border border-slate-700 text-left">${c.h}</th>`);
+  h+="<th class='p-2 border border-slate-700 text-center'>STATUS</th>";
+  h+="<th class='p-2 border border-slate-700 text-center'>AKSI</th></tr>";
 
   DATA.forEach(r=>{
     const txt=r.join(" ").toLowerCase();
@@ -117,13 +156,21 @@ function renderTable(){
     if(f && st!==f) return;
 
     h+="<tr class='hover:bg-slate-800'>";
-    r.forEach(c=>h+=`<td class="p-1 border border-slate-800">${c||""}</td>`);
-    h+=`<td class="p-1 border border-slate-800 text-center">
+    cols.forEach(c=>h+=`<td class="p-2 border border-slate-800">${r[c.i]||""}</td>`);
+
+    h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td>`;
+    h+=`<td class="p-2 border border-slate-800 text-center">
       <button onclick='openModal(${JSON.stringify(r)})'
-      class="bg-blue-600 px-2 py-1 rounded text-xs">Aksi</button></td></tr>`;
+      class="bg-blue-600 px-3 py-1 rounded text-xs">Aksi</button></td></tr>`;
   });
 
   table.innerHTML=h;
+}
+
+function badge(st){
+  if(st==="SELESAI") return `<span class="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs">SELESAI</span>`;
+  if(st==="DIPERIKSA") return `<span class="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-xs">DIPERIKSA</span>`;
+  return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
 }
 
 function openModal(row){

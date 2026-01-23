@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Admin Pengaduan</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 .sidebar-collapsed{width:4rem!important}
 .sidebar-collapsed h2,
@@ -26,26 +25,18 @@
     <button onclick="show('data')" class="w-full text-left p-2 rounded hover:bg-slate-800"><span>Data Aduan</span></button>
   </nav>
 
-  <!-- LOGOUT DI BAWAH -->
+  <!-- LOGOUT PALING BAWAH -->
   <button onclick="logout()" class="w-full text-left p-2 rounded hover:bg-red-600 mt-6"><span>Logout</span></button>
 </div>
 
 <!-- MAIN -->
-<div id="main" class="flex-1 p-6 overflow-auto">
+<div id="main" class="flex-1 p-6 overflow-hidden flex flex-col">
 
 <!-- DASHBOARD -->
 <div id="dash">
   <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
-
   <div id="cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8"></div>
 
-  <!-- GRAFIK -->
-  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
-    <h2 class="font-bold mb-4">📊 Grafik Bulanan Aduan</h2>
-    <canvas id="chartBulanan" height="100"></canvas>
-  </div>
-
-  <!-- TERBARU -->
   <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
     <h2 class="font-bold mb-4">🕒 Aduan Terbaru</h2>
     <div id="recentList" class="space-y-3"></div>
@@ -53,13 +44,14 @@
 </div>
 
 <!-- DATA -->
-<div id="data" class="hidden">
+<div id="data" class="hidden flex-1 flex flex-col overflow-hidden">
   <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
 
   <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
   class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
 
-  <div class="border border-slate-800 rounded-xl overflow-hidden">
+  <!-- AREA TABEL SCROLL -->
+  <div class="border border-slate-800 rounded-xl overflow-auto flex-1">
     <table class="w-full text-sm" id="t"></table>
   </div>
 
@@ -87,7 +79,7 @@ const HIDE_COL=[
 "last update date","submission id","janji temu","pernyataan"
 ];
 
-let RAW=[],HEADER=[],chart,page=1;
+let RAW=[],HEADER=[],page=1;
 
 /* SIDEBAR */
 function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
@@ -115,7 +107,7 @@ if(s)return["SELESAI","green"];if(p)return["DIPERIKSA","yellow"];return["PENDING
 async function load(){
 const r=await fetch(`${API}?action=all&key=${KEY}`);
 const j=await r.json();RAW=j.data;HEADER=j.header;
-buildCards();buildRecent();buildChart();render();
+buildCards();buildRecent();render();
 }
 
 /* DASHBOARD */
@@ -128,7 +120,7 @@ cards.innerHTML=`
 <div class="bg-green-600/20 border border-green-600 rounded-2xl p-6 h-32 flex flex-col justify-between"><div>Selesai</div><div class="text-4xl font-bold">${s}</div></div>`;
 }
 
-/* RECENT */
+/* TERBARU */
 function buildRecent(){
 const list=[...RAW].sort((a,b)=>getDate(HEADER,b)-getDate(HEADER,a)).slice(0,5);
 recentList.innerHTML=list.map(r=>{
@@ -137,20 +129,6 @@ return `<div class="border border-slate-800 rounded-xl p-3 hover:bg-slate-800">
 <div class="text-xs text-slate-400">${d?d.toLocaleDateString("id-ID"):"-"}</div>
 <div class="font-semibold">${r.join(" ").slice(0,80)}...</div></div>`;
 }).join("");
-}
-
-/* CHART */
-function buildChart(){
-const map={};
-RAW.forEach(r=>{
-const d=getDate(HEADER,r);if(!d)return;
-const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-map[k]=(map[k]||0)+1;
-});
-const labels=Object.keys(map).sort();const data=labels.map(l=>map[l]);
-if(chart)chart.destroy();
-chart=new Chart(chartBulanan,{type:"line",data:{labels,datasets:[{data,tension:0.4,fill:true}]},
-options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
 }
 
 /* TABLE + PAGINATION + BADGE */

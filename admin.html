@@ -4,60 +4,67 @@
 <meta charset="UTF-8">
 <title>Admin Pengaduan</title>
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
-.sidebar-collapsed{width:4rem!important}
-.sidebar-collapsed h2,
-.sidebar-collapsed nav span{display:none}
+  body{overflow:hidden}
+  .sidebar-collapsed{width:4rem!important}
+  .sidebar-collapsed h2,.sidebar-collapsed span{display:none}
+  thead th{position:sticky;top:0;background:#0f172a;z-index:10}
 </style>
 </head>
 
-<body class="bg-slate-950 text-white min-h-screen flex">
+<body class="bg-slate-950 text-white h-screen flex">
 
 <!-- SIDEBAR -->
-<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 p-4 transition-all duration-300 flex flex-col">
+<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col transition-all">
   <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-bold whitespace-nowrap">🛠 Admin Pengaduan</h2>
-    <button onclick="toggleSidebar()" class="text-xl">☰</button>
+    <h2 class="text-xl font-bold">🛠 Admin Pengaduan</h2>
+    <button onclick="toggleSidebar()">☰</button>
   </div>
 
   <nav class="space-y-2 flex-1">
-    <button onclick="show('dash')" class="w-full text-left p-2 rounded bg-slate-800"><span>Dashboard</span></button>
-    <button onclick="show('data')" class="w-full text-left p-2 rounded hover:bg-slate-800"><span>Data Aduan</span></button>
+    <button onclick="show('dash')" class="w-full p-2 rounded bg-slate-800 text-left">Dashboard</button>
+    <button onclick="show('data')" class="w-full p-2 rounded hover:bg-slate-800 text-left">Data Aduan</button>
   </nav>
 
-  <button onclick="logout()" class="w-full text-left p-2 rounded hover:bg-red-600 mt-6"><span>Logout</span></button>
+  <button onclick="logout()" class="p-2 rounded hover:bg-red-600">Logout</button>
 </div>
 
 <!-- MAIN -->
-<div id="main" class="flex-1 p-6 overflow-auto">
+<div class="flex-1 flex flex-col overflow-hidden">
 
 <!-- DASHBOARD -->
-<div id="dash">
+<div id="dash" class="p-6 overflow-auto">
   <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
-  <div id="cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8"></div>
+  <div id="cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
 
-  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-    <h2 class="font-bold mb-4">🕒 Aduan Terbaru</h2>
-    <div id="recentList" class="space-y-3"></div>
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+    <h2 class="font-bold mb-3">🕒 Aduan Terbaru</h2>
+    <div id="recentList" class="space-y-2 text-sm"></div>
   </div>
 </div>
 
 <!-- DATA -->
-<div id="data" class="hidden">
-  <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
+<div id="data" class="hidden flex flex-col h-full">
 
-  <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
-  class="w-full p-3 mb-4 rounded bg-slate-800 outline-none">
-
-  <div class="border border-slate-800 rounded-xl overflow-auto" style="max-height:65vh">
-    <table class="w-full text-sm" id="t"></table>
+  <div class="p-6">
+    <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
+    <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
+    class="w-full p-3 rounded bg-slate-800 outline-none">
   </div>
 
-  <div class="flex justify-between items-center mt-4">
-    <div id="pageInfo" class="text-sm text-slate-400"></div>
-    <div class="space-x-2">
-      <button onclick="prevPage()" class="px-3 py-1 bg-slate-800 rounded">◀</button>
-      <button onclick="nextPage()" class="px-3 py-1 bg-slate-800 rounded">▶</button>
+  <!-- TABLE WRAPPER -->
+  <div class="flex-1 px-6 pb-4 overflow-hidden">
+    <div class="h-full border border-slate-800 rounded-xl overflow-auto">
+      <table class="min-w-[1200px] w-full text-sm" id="t"></table>
+    </div>
+
+    <div class="flex justify-between items-center mt-3 text-sm text-slate-400">
+      <div id="pageInfo"></div>
+      <div class="space-x-2">
+        <button onclick="prevPage()" class="px-3 py-1 bg-slate-800 rounded">◀</button>
+        <button onclick="nextPage()" class="px-3 py-1 bg-slate-800 rounded">▶</button>
+      </div>
     </div>
   </div>
 </div>
@@ -69,7 +76,7 @@
 
 <input id="mpemeriksa" placeholder="Pemeriksa" class="w-full p-2 rounded bg-slate-800 mb-2">
 <input id="mtglperiksa" type="date" class="w-full p-2 rounded bg-slate-800 mb-2">
-<textarea id="mhasilperiksa" placeholder="Hasil Periksa" class="w-full p-2 rounded bg-slate-800 mb-2"></textarea>
+<textarea id="mhasilperiksa" placeholder="Hasil Periksa" class="w-full p-2 rounded bg-slate-800 mb-3"></textarea>
 
 <select id="mteknisi" class="w-full p-2 rounded bg-slate-800 mb-2">
 <option value="">-- Pilih Teknisi --</option>
@@ -79,7 +86,7 @@
 <input id="mtglpenanganan" type="date" class="w-full p-2 rounded bg-slate-800 mb-2">
 <textarea id="mhasilpenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 mb-2"></textarea>
 
-<label class="block text-sm mb-1">Upload Foto Hasil Penanganan</label>
+<label class="text-sm">Upload Foto Hasil Penanganan</label>
 <input id="mfoto" type="file" accept="image/*" class="w-full p-2 bg-slate-800 rounded mb-3">
 
 <textarea id="mcatatan" placeholder="Catatan tambahan" class="w-full p-2 rounded bg-slate-800 mb-4"></textarea>
@@ -99,13 +106,12 @@ const KEY="12345";
 const PER_PAGE=10;
 
 const HIDE_COL=[
-"foto dokumentasi","submission ip","submission url","submission edit url",
-"last update date","janji temu","pernyataan"
+"submission id","foto dokumentasi","submission ip","submission url",
+"submission edit url","last update date","janji temu","pernyataan"
 ];
 
 let RAW=[],HEADER=[],page=1,CID="",ID_INDEX=-1;
 
-/* BASIC */
 function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
 function show(id){dash.classList.add("hidden");data.classList.add("hidden");document.getElementById(id).classList.remove("hidden")}
 function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
@@ -115,14 +121,12 @@ function getVal(h,d,k){const i=h.findIndex(x=>norm(x).includes(k));return i>-1?d
 function getDate(h,r){const i=h.findIndex(x=>norm(x).includes("submission date"));return i>-1?new Date(r[i]):null}
 function daysOld(r){const d=getDate(HEADER,r);return d?((new Date()-d)/86400000):0}
 
-/* STATUS */
 function getStatus(h,d){
 const p=filled(getVal(h,d,"pemeriksa"))&&filled(getVal(h,d,"hasil periksa"))&&filled(getVal(h,d,"tanggal periksa"));
 const s=filled(getVal(h,d,"teknisi"))&&filled(getVal(h,d,"hasil penanganan"))&&filled(getVal(h,d,"tanggal penanganan"));
 if(s)return["SELESAI","green"];if(p)return["DIPERIKSA","yellow"];return["PENDING","red"];
 }
 
-/* LOAD */
 async function load(){
 const r=await fetch(`${API}?action=all&key=${KEY}`);
 const j=await r.json();RAW=j.data;HEADER=j.header;
@@ -130,22 +134,20 @@ ID_INDEX = HEADER.findIndex(h=>norm(h).includes("submissionid"));
 buildCards();buildRecent();render();
 }
 
-/* DASHBOARD */
 function buildCards(){
 let p=0,d=0,s=0;
 RAW.forEach(r=>{const st=getStatus(HEADER,r)[0];if(st=="SELESAI")s++;else if(st=="DIPERIKSA")d++;else p++});
 cards.innerHTML=`
-<div class="bg-red-600/20 border border-red-600 rounded-2xl p-6"><div>Pending</div><div class="text-3xl font-bold">${p}</div></div>
-<div class="bg-yellow-500/20 border border-yellow-500 rounded-2xl p-6"><div>Diperiksa</div><div class="text-3xl font-bold">${d}</div></div>
-<div class="bg-green-600/20 border border-green-600 rounded-2xl p-6"><div>Selesai</div><div class="text-3xl font-bold">${s}</div></div>`;
+<div class="bg-red-600/20 border border-red-600 rounded-xl p-5"><div>Pending</div><div class="text-3xl font-bold">${p}</div></div>
+<div class="bg-yellow-500/20 border border-yellow-500 rounded-xl p-5"><div>Diperiksa</div><div class="text-3xl font-bold">${d}</div></div>
+<div class="bg-green-600/20 border border-green-600 rounded-xl p-5"><div>Selesai</div><div class="text-3xl font-bold">${s}</div></div>`;
 }
 
 function buildRecent(){
 const list=[...RAW].sort((a,b)=>getDate(HEADER,b)-getDate(HEADER,a)).slice(0,5);
-recentList.innerHTML=list.map(r=>`<div class="border border-slate-800 rounded-xl p-3">${r.join(" ").slice(0,90)}...</div>`).join("");
+recentList.innerHTML=list.map(r=>`<div class="border border-slate-800 rounded p-2">${r.join(" ").slice(0,100)}...</div>`).join("");
 }
 
-/* TABLE */
 function render(){
 const key=norm(q.value);
 const filtered=RAW.filter(r=>!key||r.join(" ").toLowerCase().includes(key));
@@ -153,13 +155,13 @@ const total=Math.ceil(filtered.length/PER_PAGE);
 if(page>total)page=total||1;
 const rows=filtered.slice((page-1)*PER_PAGE,page*PER_PAGE);
 
-let h="<tr class='bg-slate-800'>";
+let h="<thead><tr class='text-left'>";
 HEADER.forEach(x=>{
 if(norm(x).includes("submissionid")) return;
 if(HIDE_COL.some(v=>norm(x).includes(v))) return;
-h+=`<th class='p-3 text-left'>${x}</th>`;
+h+=`<th class='p-3'>${x}</th>`;
 });
-h+="<th>Status</th><th>Aksi</th></tr>";
+h+="<th>Status</th><th>Aksi</th></tr></thead><tbody>";
 
 rows.forEach(r=>{
 const[st,c]=getStatus(HEADER,r);
@@ -168,20 +170,18 @@ h+=`<tr class='border-b border-slate-800 ${old?"bg-red-950/40":""}'>`;
 r.forEach((x,i)=>{
 if(i===ID_INDEX) return;
 if(HIDE_COL.some(v=>norm(HEADER[i]).includes(v))) return;
-h+=`<td class='p-3'>${x||""}</td>`;
+h+=`<td class='p-3 align-top'>${x||""}</td>`;
 });
-h+=`<td class='p-3 text-${c}-400 font-bold'>${st} ${old?'<span class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">TERLAMBAT</span>':""}</td>`;
+h+=`<td class='p-3 font-bold text-${c}-400'>${st} ${old?'<span class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">TERLAMBAT</span>':""}</td>`;
 h+=`<td class='p-3'><button onclick="openModal('${r[ID_INDEX]}')" class="text-blue-400">Kelola</button></td></tr>`;
 });
 
-t.innerHTML=h;
+t.innerHTML=h+"</tbody>";
 pageInfo.innerText=`Halaman ${page} dari ${total} (${filtered.length} data)`;
 }
 
 function nextPage(){page++;render()}
 function prevPage(){page--;if(page<1)page=1;render()}
-
-/* MODAL */
 function openModal(id){CID=id;modal.classList.remove("hidden")}
 
 async function save(){
@@ -192,8 +192,7 @@ const b64=await toBase64(f);
 const r=await fetch(API,{method:"POST",body:JSON.stringify({
 action:"upload",key:KEY,name:f.name,type:f.type,base64:b64.split(",")[1]
 })});
-const j=await r.json();
-foto=j.url;
+const j=await r.json();foto=j.url;
 }
 
 fetch(API,{method:"POST",body:JSON.stringify({

@@ -201,7 +201,9 @@ function openModal(id){
 function save(){
   const admin = sessionStorage.getItem("admin") || "ADMIN";
   const waktu = new Date().toLocaleString("id-ID");
-  const log = `\n[${waktu}] Update oleh ${admin}: Pemeriksa=${mpemeriksa.value}, Teknisi=${mteknisi.value}`;
+
+  const log = (mcatatan.value || "") + 
+    `\n[${waktu}] Update oleh ${admin}`;
 
   fetch(API,{
     method:"POST",
@@ -209,9 +211,16 @@ function save(){
       action:"update",
       key:KEY,
       id:CID,
-      status:"",
-      catatan:(mcatatan.value || "") + log,
-      foto:""
+
+      pemeriksa: mpemeriksa.value,
+      hasilPeriksa: mhasilperiksa.value,
+      tglPeriksa: mtglperiksa.value,
+
+      teknisi: mteknisi.value,
+      hasilPenanganan: mhasilpenanganan.value,
+      tglPenanganan: mtglpenanganan.value,
+
+      catatan: log
     })
   }).then(()=>location.reload());
 }

@@ -6,57 +6,68 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-  body{overflow:hidden}
-  .sidebar-collapsed{width:4rem!important}
-  .sidebar-collapsed h2,.sidebar-collapsed span{display:none}
-  thead th{position:sticky;top:0;background:#0f172a;z-index:10}
+html,body{height:100%;margin:0}
+#sidebar{min-width:260px}
+.sidebar-collapsed{min-width:70px!important;width:70px!important}
+.sidebar-collapsed .label{display:none}
+thead th{position:sticky;top:0;background:#0f172a;z-index:10}
 </style>
 </head>
 
-<body class="bg-slate-950 text-white h-screen flex">
+<body class="bg-slate-950 text-white h-screen overflow-hidden">
+<div class="flex h-full">
 
 <!-- SIDEBAR -->
-<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col transition-all">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-bold">🛠 Admin Pengaduan</h2>
-    <button onclick="toggleSidebar()">☰</button>
+<aside id="sidebar" class="bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300">
+
+  <div class="flex items-center justify-between p-4 border-b border-slate-800">
+    <div class="font-bold text-lg whitespace-nowrap">🛠 <span class="label">Admin Pengaduan</span></div>
+    <button onclick="toggleSidebar()" class="text-xl">☰</button>
   </div>
 
-  <nav class="space-y-2 flex-1">
-    <button onclick="show('dash')" class="w-full p-2 rounded bg-slate-800 text-left">Dashboard</button>
-    <button onclick="show('data')" class="w-full p-2 rounded hover:bg-slate-800 text-left">Data Aduan</button>
+  <nav class="flex-1 p-3 space-y-2">
+    <button onclick="show('dash')" class="w-full flex items-center gap-3 p-2 rounded bg-slate-800">
+      📊 <span class="label">Dashboard</span>
+    </button>
+    <button onclick="show('data')" class="w-full flex items-center gap-3 p-2 rounded hover:bg-slate-800">
+      📁 <span class="label">Data Aduan</span>
+    </button>
   </nav>
 
-  <button onclick="logout()" class="p-2 rounded hover:bg-red-600">Logout</button>
-</div>
+  <div class="p-3 border-t border-slate-800">
+    <button onclick="logout()" class="w-full flex items-center gap-3 p-2 rounded hover:bg-red-600">
+      🚪 <span class="label">Logout</span>
+    </button>
+  </div>
+</aside>
 
 <!-- MAIN -->
-<div class="flex-1 flex flex-col overflow-hidden">
+<main class="flex-1 flex flex-col h-full overflow-hidden">
 
 <!-- DASHBOARD -->
-<div id="dash" class="p-6 overflow-auto">
+<section id="dash" class="flex-1 overflow-auto p-6">
   <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+
   <div id="cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
 
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
     <h2 class="font-bold mb-3">🕒 Aduan Terbaru</h2>
     <div id="recentList" class="space-y-2 text-sm"></div>
   </div>
-</div>
+</section>
 
 <!-- DATA -->
-<div id="data" class="hidden flex flex-col h-full">
+<section id="data" class="hidden flex-1 flex flex-col overflow-hidden">
 
   <div class="p-6">
     <h1 class="text-2xl font-bold mb-4">Data Pengaduan</h1>
     <input id="q" oninput="render()" placeholder="Cari ID / Nama / Unit / HP / Laporan..."
-    class="w-full p-3 rounded bg-slate-800 outline-none">
+      class="w-full p-3 rounded bg-slate-800 outline-none">
   </div>
 
-  <!-- TABLE WRAPPER -->
   <div class="flex-1 px-6 pb-4 overflow-hidden">
     <div class="h-full border border-slate-800 rounded-xl overflow-auto">
-      <table class="min-w-[1200px] w-full text-sm" id="t"></table>
+      <table class="min-w-[1400px] w-full text-sm" id="t"></table>
     </div>
 
     <div class="flex justify-between items-center mt-3 text-sm text-slate-400">
@@ -67,6 +78,9 @@
       </div>
     </div>
   </div>
+</section>
+
+</main>
 </div>
 
 <!-- MODAL -->
@@ -101,6 +115,7 @@
 <script>
 if(!sessionStorage.getItem("admin")) location.href="login.html";
 
+/* ====== KONFIG ====== */
 const API="https://script.google.com/macros/s/AKfycbwdtVp4lgWaww8jtUHYtpd2Rj2hfbkwdD3T1OSCmSGRwBhGaDK_cgbE7YlpvwRnUuLP/exec";
 const KEY="12345";
 const PER_PAGE=10;
@@ -112,6 +127,7 @@ const HIDE_COL=[
 
 let RAW=[],HEADER=[],page=1,CID="",ID_INDEX=-1;
 
+/* ====== BASIC ====== */
 function toggleSidebar(){sidebar.classList.toggle("sidebar-collapsed")}
 function show(id){dash.classList.add("hidden");data.classList.add("hidden");document.getElementById(id).classList.remove("hidden")}
 function logout(){sessionStorage.removeItem("admin");location.href="login.html"}
@@ -121,12 +137,14 @@ function getVal(h,d,k){const i=h.findIndex(x=>norm(x).includes(k));return i>-1?d
 function getDate(h,r){const i=h.findIndex(x=>norm(x).includes("submission date"));return i>-1?new Date(r[i]):null}
 function daysOld(r){const d=getDate(HEADER,r);return d?((new Date()-d)/86400000):0}
 
+/* ====== STATUS ====== */
 function getStatus(h,d){
 const p=filled(getVal(h,d,"pemeriksa"))&&filled(getVal(h,d,"hasil periksa"))&&filled(getVal(h,d,"tanggal periksa"));
 const s=filled(getVal(h,d,"teknisi"))&&filled(getVal(h,d,"hasil penanganan"))&&filled(getVal(h,d,"tanggal penanganan"));
 if(s)return["SELESAI","green"];if(p)return["DIPERIKSA","yellow"];return["PENDING","red"];
 }
 
+/* ====== LOAD ====== */
 async function load(){
 const r=await fetch(`${API}?action=all&key=${KEY}`);
 const j=await r.json();RAW=j.data;HEADER=j.header;
@@ -134,6 +152,7 @@ ID_INDEX = HEADER.findIndex(h=>norm(h).includes("submissionid"));
 buildCards();buildRecent();render();
 }
 
+/* ====== DASHBOARD ====== */
 function buildCards(){
 let p=0,d=0,s=0;
 RAW.forEach(r=>{const st=getStatus(HEADER,r)[0];if(st=="SELESAI")s++;else if(st=="DIPERIKSA")d++;else p++});
@@ -148,6 +167,7 @@ const list=[...RAW].sort((a,b)=>getDate(HEADER,b)-getDate(HEADER,a)).slice(0,5);
 recentList.innerHTML=list.map(r=>`<div class="border border-slate-800 rounded p-2">${r.join(" ").slice(0,100)}...</div>`).join("");
 }
 
+/* ====== TABLE ====== */
 function render(){
 const key=norm(q.value);
 const filtered=RAW.filter(r=>!key||r.join(" ").toLowerCase().includes(key));
@@ -184,28 +204,44 @@ function nextPage(){page++;render()}
 function prevPage(){page--;if(page<1)page=1;render()}
 function openModal(id){CID=id;modal.classList.remove("hidden")}
 
+/* ====== SAVE FIX ====== */
 async function save(){
-let foto="";
-if(mfoto.files.length){
-const f=mfoto.files[0];
-const b64=await toBase64(f);
-const r=await fetch(API,{method:"POST",body:JSON.stringify({
-action:"upload",key:KEY,name:f.name,type:f.type,base64:b64.split(",")[1]
-})});
-const j=await r.json();foto=j.url;
-}
+try{
+  let foto="";
 
-fetch(API,{method:"POST",body:JSON.stringify({
-action:"update",key:KEY,id:CID,
-pemeriksa:mpemeriksa.value,
-hasilPeriksa:mhasilperiksa.value,
-tglPeriksa:mtglperiksa.value,
-teknisi:mteknisi.value,
-hasilPenanganan:mhasilpenanganan.value,
-tglPenanganan:mtglpenanganan.value,
-catatan:mcatatan.value,
-fotoHasil:foto
-})}).then(()=>location.reload());
+  if(mfoto.files.length){
+    const f=mfoto.files[0];
+    const b64=await toBase64(f);
+    const r=await fetch(API,{method:"POST",body:JSON.stringify({
+      action:"upload",key:KEY,name:f.name,type:f.type,base64:b64.split(",")[1]
+    })});
+    const j=await r.json();
+    if(j.error){ alert("Upload gagal: "+j.error); return; }
+    foto=j.url;
+  }
+
+  const res = await fetch(API,{method:"POST",body:JSON.stringify({
+    action:"update",key:KEY,id:CID,
+    pemeriksa:mpemeriksa.value,
+    hasilPeriksa:mhasilperiksa.value,
+    tglPeriksa:mtglperiksa.value,
+    teknisi:mteknisi.value,
+    hasilPenanganan:mhasilpenanganan.value,
+    tglPenanganan:mtglpenanganan.value,
+    catatan:mcatatan.value,
+    fotoHasil:foto
+  })});
+
+  const out = await res.json();
+  if(out.error){ alert("Gagal simpan: "+out.error); console.log(out); return; }
+
+  alert("✅ Data berhasil disimpan");
+  location.reload();
+
+}catch(err){
+  alert("ERROR: "+err.toString());
+  console.error(err);
+}
 }
 
 function toBase64(file){

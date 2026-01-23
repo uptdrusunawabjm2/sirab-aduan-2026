@@ -18,6 +18,9 @@
     </button>
   </div>
 
+  <!-- STATUS BAR -->
+  <div id="statusBar" class="hidden mb-3 p-3 rounded text-center font-bold"></div>
+
   <div id="hasil" class="hidden bg-slate-800 p-4 rounded text-sm space-y-1"></div>
   <div id="msg" class="text-center text-red-400 text-sm"></div>
 </div>
@@ -29,8 +32,10 @@ async function cek() {
   const id = document.getElementById("ticket").value.trim();
   const hasil = document.getElementById("hasil");
   const msg = document.getElementById("msg");
+  const bar = document.getElementById("statusBar");
 
   hasil.classList.add("hidden");
+  bar.classList.add("hidden");
   msg.textContent = "Memuat...";
 
   if (!id) {
@@ -48,24 +53,76 @@ async function cek() {
     }
 
     msg.textContent = "";
-    hasil.innerHTML = render(json.header, json.data);
+    hasil.innerHTML = renderCustom(json.header, json.data);
     hasil.classList.remove("hidden");
+
+    renderStatus(json.header, json.data);
 
   } catch (e) {
     msg.textContent = "Gagal menghubungi server.";
   }
 }
 
-function render(header, row) {
+/* ===== STATUS BAR LOGIC ===== */
+function renderStatus(header, row) {
+  const bar = document.getElementById("statusBar");
+  const map = {};
+  header.forEach((h,i)=>map[h]=row[i]);
+
+  const diperiksa =
+    map["Pemeriksa"] && map["Tanggal Periksa"] && map["Hasil Periksa"];
+
+  const selesai =
+    map["Teknisi"] && map["Tanggal Penanganan"] && map["Hasil Penanganan"];
+
+  bar.className = "mb-3 p-3 rounded text-center font-bold";
+
+  if (selesai) {
+    bar.textContent = "STATUS: SELESAI";
+    bar.classList.add("bg-green-600","text-white");
+  } else if (diperiksa) {
+    bar.textContent = "STATUS: DIPERIKSA";
+    bar.classList.add("bg-blue-600","text-white");
+  } else {
+    bar.textContent = "STATUS: PENDING";
+    bar.classList.add("bg-yellow-500","text-black");
+  }
+
+  bar.classList.remove("hidden");
+}
+
+/* ===== RENDER DATA ===== */
+function renderCustom(header, row) {
+  const map = {};
+  header.forEach((h, i) => map[h] = row[i]);
+
   let html = "";
-  header.forEach((h, i) => {
-    if (!row[i]) return;
-    if (h.toLowerCase().includes("foto")) {
-      html += `<div><b>${h}:</b><br><a href="${row[i]}" target="_blank" class="text-blue-400 underline">Lihat Foto</a></div>`;
-    } else {
-      html += `<div><b>${h}:</b> ${row[i]}</div>`;
-    }
+
+  // URUTAN KHUSUS
+  add("Submission ID");
+  add("RUSUNAWA");
+  add("NOMOR UNIT/SARUSUNAWA");
+
+  // TAMPILKAN LAINNYA (KECUALI PERNYATAAN & YANG SUDAH)
+  header.forEach(h => {
+    if (
+      ["Submission ID","RUSUNAWA","NOMOR UNIT/SARUSUNAWA","PERNYATAAN"]
+      .includes(h)
+    ) return;
+    add(h);
   });
+
+  function add(label){
+    const val = map[label];
+    if (!val) return;
+    if (label.toLowerCase().includes("foto")) {
+      html += `<div><b>${label}:</b><br>
+        <a href="${val}" target="_blank" class="text-blue-400 underline">Lihat Foto</a></div>`;
+    } else {
+      html += `<div><b>${label}:</b> ${val}</div>`;
+    }
+  }
+
   return html;
 }
 </script>

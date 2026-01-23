@@ -2,55 +2,81 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Admin Pengaduan</title>
+<title>Tracking Pengaduan</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-white p-6">
+<body class="bg-gradient-to-br from-slate-950 to-slate-900 text-white min-h-screen flex items-center justify-center p-4">
 
-<h1 class="text-2xl font-bold mb-4">Dashboard Pengaduan</h1>
-<table class="w-full text-sm" id="t"></table>
+<div class="bg-slate-900/80 backdrop-blur p-8 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-800">
+<h1 class="text-2xl font-bold mb-2 text-center">🔍 Tracking Pengaduan</h1>
+<p class="text-center text-slate-400 mb-6 text-sm">Masukkan Submission ID dari laporan Anda</p>
+
+<input id="tid" placeholder="Contoh: 123456789"
+class="w-full p-3 rounded-xl bg-slate-800 mb-4 outline-none focus:ring-2 focus:ring-blue-600">
+
+<button onclick="track()" class="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-xl font-bold">
+CEK STATUS
+</button>
+
+<div id="res" class="mt-6"></div>
+</div>
 
 <script>
-if(!sessionStorage.getItem("admin")) location.href="login.html";
-
 const API = "ISI_URL_APPS_SCRIPT";
-const KEY = "12345"; // samakan dengan ADMIN_PASS
 
-async function load(){
-  const r = await fetch(`${API}?action=all&key=${KEY}`);
+function badge(s){
+  if(!s) return `<span class="px-3 py-1 rounded-full bg-gray-600 text-xs">UNKNOWN</span>`;
+  s = s.toLowerCase();
+  if(s.includes("selesai")) return `<span class="px-3 py-1 rounded-full bg-green-600 text-xs">SELESAI</span>`;
+  if(s.includes("proses")) return `<span class="px-3 py-1 rounded-full bg-yellow-500 text-black text-xs">DIPROSES</span>`;
+  return `<span class="px-3 py-1 rounded-full bg-red-600 text-xs">PENDING</span>`;
+}
+
+function bar(s){
+  if(!s) return 20;
+  s=s.toLowerCase();
+  if(s.includes("selesai")) return 100;
+  if(s.includes("proses")) return 60;
+  return 25;
+}
+
+async function track(){
+  res.innerHTML = `<p class="text-slate-400">Memuat...</p>`;
+  const id = tid.value.trim();
+  const r = await fetch(`${API}?track=${id}`);
   const j = await r.json();
-  let h="<tr class='bg-slate-800'>";
-  j.header.forEach(x=>h+=`<th class='p-2'>${x}</th>`);
-  h+="<th>Aksi</th></tr>";
 
-  j.data.forEach(r=>{
-    h+="<tr class='border-b border-slate-800'>";
-    r.forEach(x=>h+=`<td class='p-2'>${x||""}</td>`);
-    h+=`<td><button onclick="edit('${r[0]}')" class="text-blue-400">Edit</button></td></tr>`;
+  if(!j.found){
+    res.innerHTML = "<p class='text-red-400'>❌ Data tidak ditemukan</p>";
+    return;
+  }
+
+  const h = j.header;
+  const d = j.data;
+  const statusIndex = h.findIndex(x=>x.toLowerCase().includes("status"));
+  const status = d[statusIndex] || "Pending";
+
+  let html = `
+  <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 space-y-3">
+    <div class="flex justify-between items-center">
+      <h2 class="font-bold text-lg">📄 Detail Pengaduan</h2>
+      ${badge(status)}
+    </div>
+
+    <div class="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+      <div class="bg-blue-500 h-2" style="width:${bar(status)}%"></div>
+    </div>
+    <p class="text-xs text-slate-400">Progress: ${bar(status)}%</p>
+
+    <div class="text-sm space-y-1 mt-3">`;
+
+  h.forEach((x,i)=>{
+    html += `<div><span class="text-slate-400">${x}</span><br><b>${d[i]||"-"}</b></div>`;
   });
 
-  t.innerHTML=h;
+  html += `</div></div>`;
+  res.innerHTML = html;
 }
-
-function edit(id){
-  const s = prompt("Status (Pending/Diproses/Selesai)");
-  const c = prompt("Catatan penanganan");
-  const f = prompt("Link foto hasil");
-
-  fetch(API,{
-    method:"POST",
-    body:JSON.stringify({
-      action:"update",
-      key:KEY,
-      id:id,
-      status:s,
-      catatan:c,
-      foto:f
-    })
-  }).then(()=>load());
-}
-
-load();
 </script>
 </body>
 </html>

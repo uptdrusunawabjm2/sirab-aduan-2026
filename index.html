@@ -3,166 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <title>Tracking Aduan Rusunawa</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-  body {
-    min-height: 100vh;
-    min-height: 100svh;
-  }
+body{background:radial-gradient(circle at top,#0f172a,#020617);}
+.card{backdrop-filter:blur(12px);background:linear-gradient(145deg,rgba(30,41,59,.92),rgba(15,23,42,.92));}
+.input{width:100%;padding:14px;font-size:16px;background:#020617;border:1px solid #334155;border-radius:14px;color:white;}
 </style>
 </head>
 
-<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white min-h-screen flex items-center justify-center p-3">
+<body class="text-white min-h-screen flex items-center justify-center p-4">
 
-<div class="w-full max-w-3xl bg-slate-900/90 backdrop-blur border border-slate-800 rounded-2xl shadow-xl p-5">
+<div class="w-full max-w-xl card border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-5">
 
-  <h1 class="text-2xl font-bold text-center mb-1">Tracking Aduan Rusunawa</h1>
-  <p class="text-center text-slate-400 text-sm mb-5">Pantau status penanganan aduan Anda secara realtime</p>
+<h1 class="text-xl md:text-2xl font-bold text-center">Tracking Aduan Rusunawa</h1>
+<p class="text-center text-slate-400 text-sm">Pantau status penanganan aduan Anda secara realtime</p>
 
-  <!-- INPUT -->
-  <div class="flex gap-2 mb-4">
-    <input id="ticket" type="text" placeholder="Masukkan Submission ID"
-      class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 focus:outline-none focus:ring focus:ring-blue-600">
-    <button onclick="cek()" class="bg-blue-600 px-5 rounded-xl font-semibold hover:bg-blue-700 transition">
-      Cek
-    </button>
-  </div>
+<div class="flex gap-2">
+  <input id="ticketInput" placeholder="Masukkan Submission ID" class="input">
+  <button onclick="cek()" class="bg-blue-600 hover:bg-blue-700 px-4 rounded-xl font-semibold">Cek</button>
+</div>
 
-  <!-- STATUS BAR -->
-  <div id="statusBar" class="hidden mb-4 p-3 rounded-xl text-center font-bold text-lg"></div>
-
-  <!-- HASIL -->
-  <div id="hasil" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-
-  <div id="msg" class="text-center text-red-400 text-sm mt-3"></div>
+<div id="hasil" class="text-sm"></div>
 
 </div>
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
-const TRACKING_URL = "https://sirab-aduan-2026.vercel.app/"; // contoh: https://tracking-rusun.vercel.app
 
-async function cek() {
-  const id = ticket.value.trim();
-  hasil.classList.add("hidden");
-  statusBar.classList.add("hidden");
-  msg.textContent = "Memuat data...";
+/* ================= AUTO TRACK DARI URL ================= */
+window.onload = () => {
+  const p = new URLSearchParams(window.location.search);
+  const t = p.get("ticket");
+  if(t){
+    ticketInput.value = t;
+    cek();
+  }
+};
+/* ======================================================= */
 
-  if (!id) {
-    msg.textContent = "Submission ID wajib diisi.";
+async function cek(){
+  const id = ticketInput.value.trim();
+  if(!id){
+    hasil.innerHTML = "<div class='text-red-400'>Masukkan nomor tiket</div>";
     return;
   }
 
-  try {
-    const res = await fetch(`${API}?action=track&id=${encodeURIComponent(id)}`);
-    const json = await res.json();
+  hasil.innerHTML = "🔄 Memuat data...";
 
-    if (!json.found) {
-      msg.textContent = "Data tidak ditemukan.";
-      return;
-    }
+  const r = await fetch(API + "?action=track&id=" + encodeURIComponent(id));
+  const j = await r.json();
 
-    msg.textContent = "";
-    renderStatus(json.header, json.data);
-    renderUI(json.header, json.data);
-    hasil.classList.remove("hidden");
-
-  } catch {
-    msg.textContent = "Gagal menghubungi server.";
+  if(!j.found){
+    hasil.innerHTML = "<div class='text-red-400'>❌ Data tidak ditemukan</div>";
+    return;
   }
-}
 
-/* ===== STATUS ===== */
-function renderStatus(header, row){
-  const map = {}; header.forEach((h,i)=>map[h]=row[i]);
+  const h = j.header;
+  const d = j.data;
 
-  const diperiksa = map["Pemeriksa"] && map["Tanggal Periksa"] && map["Hasil Periksa"];
-  const selesai = map["Teknisi"] && map["Tanggal Penanganan"] && map["Hasil Penanganan"];
+  let html = "<div class='bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-2'>";
+  h.forEach((k,i)=>{
+    if(d[i]) html += `<div><b>${k}</b><br><span class="text-slate-300">${d[i]}</span></div>`;
+  });
+  html += "</div>";
 
-  statusBar.className = "mb-4 p-3 rounded-xl text-center font-bold text-lg";
-
-  if (selesai){
-    statusBar.textContent = "STATUS: SELESAI";
-    statusBar.classList.add("bg-green-600");
-  } else if (diperiksa){
-    statusBar.textContent = "STATUS: DIPERIKSA";
-    statusBar.classList.add("bg-blue-600");
-  } else {
-    statusBar.textContent = "STATUS: PENDING";
-    statusBar.classList.add("bg-yellow-400","text-black");
-  }
-  statusBar.classList.remove("hidden");
-}
-
-/* ===== UI ===== */
-function renderUI(header, row){
-  const map = {}; header.forEach((h,i)=>map[h]=row[i]);
-  const id = map["Submission ID"];
-
-  const qrLink = `${TRACKING_URL}?ticket=${encodeURIComponent(id)}`;
-  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrLink)}`;
-
-  hasil.innerHTML = `
-    <div class="md:col-span-2 bg-slate-800 rounded-xl p-4 space-y-2">
-      <div class="text-xs text-slate-400">Submission ID</div>
-      <div class="font-mono text-lg text-blue-400 mb-3 break-all">${id||""}</div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-        ${item("RUSUNAWA", map["RUSUNAWA"])}
-        ${item("NOMOR UNIT/SARUSUNAWA", map["NOMOR UNIT/SARUSUNAWA"])}
-        ${item("NAMA LENGKAP", map["NAMA LENGKAP"])}
-        ${item("NOMOR HP/WA", map["NOMOR HP/WA"])}
-      </div>
-
-      <div class="mt-2">${block("ISI LAPORAN", map["ISI LAPORAN"])}</div>
-      ${foto("FOTO DOKUMENTASI", map["FOTO DOKUMENTASI"])}
-
-      <hr class="border-slate-700 my-3">
-
-      ${item("Pemeriksa", map["Pemeriksa"])}
-      ${item("Tanggal Periksa", formatDate(map["Tanggal Periksa"]))}
-      ${block("Hasil Periksa", map["Hasil Periksa"])}
-
-      <hr class="border-slate-700 my-3">
-
-      ${item("Teknisi", map["Teknisi"])}
-      ${item("Tanggal Penanganan", formatDate(map["Tanggal Penanganan"]))}
-      ${block("Hasil Penanganan", map["Hasil Penanganan"])}
-      ${foto("FOTO PENANGANAN", map["Foto"])}
-    </div>
-
-    <div class="bg-slate-800 rounded-xl p-4 flex flex-col items-center justify-center">
-      <div class="text-sm text-slate-400 mb-2">QR Code Aduan</div>
-      <img src="${qrImg}" class="bg-white p-2 rounded-xl" alt="QR Aduan">
-      <div class="text-xs text-slate-400 mt-3 text-center">
-        Scan QR ini untuk membuka halaman tracking
-      </div>
-    </div>
-  `;
-}
-
-/* ===== HELPERS ===== */
-function item(label,val){
-  if(!val) return "";
-  return `<div><b class="text-slate-300">${label}:</b><br>${val}</div>`;
-}
-function block(label,val){
-  if(!val) return "";
-  return `<div><b class="text-slate-300">${label}:</b><br>${val}</div>`;
-}
-function foto(label,val){
-  if(!val) return "";
-  return `<div><b class="text-slate-300">${label}:</b><br>
-    <a href="${val}" target="_blank" class="text-blue-400 underline">Lihat Foto</a></div>`;
-}
-function formatDate(v){
-  if(!v) return "";
-  const d=new Date(v); if(isNaN(d)) return v;
-  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+  hasil.innerHTML = html;
 }
 </script>
 </body>

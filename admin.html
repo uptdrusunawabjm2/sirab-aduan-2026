@@ -121,11 +121,7 @@
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
-
-/* ========================= */
-/* ✅ SATU-SATUNYA PERBAIKAN */
-/* ========================= */
-const key = sessionStorage.getItem("key");
+const key = sessionStorage.getItem("adminKey");
 if(!key) location.href="login.html";
 
 let HEAD=[], DATA=[], RAW=[], SID="";
@@ -137,9 +133,21 @@ async function load(){
   const r = await fetch(`${API}?action=all&key=${key}`);
   const j = await r.json();
   HEAD=j.header; RAW=j.data; DATA=[...RAW];
+  sortBySubmissionDate();
   buildYear();
   hitungRekap();
   renderTable();
+}
+
+/* ===== SORT TERBARU ===== */
+function sortBySubmissionDate(){
+  const idx = HEAD.indexOf("Submission Date");
+  if(idx===-1) return;
+  DATA.sort((a,b)=>{
+    const da=new Date(a[idx]);
+    const db=new Date(b[idx]);
+    return db - da;
+  });
 }
 
 /* ===== FORMAT FOTO ===== */
@@ -165,6 +173,7 @@ function applyYear(){
     const idx=HEAD.indexOf("Submission Date");
     DATA=RAW.filter(r=>{const d=new Date(r[idx]);return !isNaN(d)&&d.getFullYear()==y});
   }
+  sortBySubmissionDate();
   hitungRekap();
   renderTable();
 }
@@ -245,7 +254,7 @@ function formatTanggal(val){
   return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
 }
 
-/* ===== FUNGSI ASLI ===== */
+/* ===== FUNGSI ASLI TIDAK DIUBAH ===== */
 
 function badge(st){
   if(st==="SELESAI") return `<span class="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs">SELESAI</span>`;

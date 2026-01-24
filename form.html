@@ -7,7 +7,6 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- FLATPICKR (KALENDER MODERN) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
@@ -52,49 +51,33 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
   <textarea id="laporan" rows="3" placeholder="Tuliskan isi laporan aduan..." class="input md:col-span-2"></textarea>
 </div>
 
-<!-- JANJI TEMU -->
 <div class="blockbox">
-  <div class="flex items-center gap-2 mb-3 text-cyan-400 font-semibold">
-    📅 Janji Temu (Hari kerja)
-  </div>
-
+  <div class="text-cyan-400 font-semibold mb-2">📅 Janji Temu (Hari kerja)</div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-    <div>
-      <div class="text-xs text-slate-400 mb-1">Pilih tanggal</div>
-      <input id="janjiTanggal" placeholder="mm/dd/yyyy" class="input">
-    </div>
-
-    <div>
-      <div class="text-xs text-slate-400 mb-1">Pilih jam layanan</div>
-      <select id="janjiJam" class="input">
-        <option value="">-- Pilih Jam --</option>
-        <option value="08.00-09.30">08.00 - 09.30</option>
-        <option value="09.30-12.00">09.30 - 12.00</option>
-        <option value="13.30-15.00">13.30 - 15.00</option>
-        <option value="15.00-16.30">15.00 - 16.30</option>
-      </select>
-    </div>
+    <input id="janjiTanggal" placeholder="mm/dd/yyyy" class="input">
+    <select id="janjiJam" class="input">
+      <option value="">-- Pilih Jam --</option>
+      <option value="08.00-09.30">08.00 - 09.30</option>
+      <option value="09.30-12.00">09.30 - 12.00</option>
+      <option value="13.30-15.00">13.30 - 15.00</option>
+      <option value="15.00-16.30">15.00 - 16.30</option>
+    </select>
   </div>
-
   <input type="hidden" id="janji">
 </div>
 
-<!-- FOTO -->
 <div class="blockbox border-dashed">
-  <div class="flex items-center gap-2 mb-2 text-emerald-400 font-semibold">
-    📷 Upload Foto Dokumentasi
-  </div>
+  <div class="text-emerald-400 font-semibold mb-2">📷 Upload Foto Dokumentasi</div>
   <input id="foto" type="file" multiple accept="image/*" capture="environment" class="text-sm">
 </div>
 
-<label class="flex items-start gap-2 text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
-  <input type="checkbox" id="pernyataan" class="mt-1 scale-110">
+<label class="flex gap-2 text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
+  <input type="checkbox" id="pernyataan">
   <span>Saya menyatakan laporan ini benar dan dapat dipertanggungjawabkan</span>
 </label>
 
-<button onclick="kirim()"
-  class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 py-3 md:py-4 rounded-xl font-bold shadow-lg">
-  📩 Kirim Aduan
+<button onclick="kirim()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 py-3 rounded-xl font-bold">
+📩 Kirim Aduan
 </button>
 
 <div id="msg" class="text-center text-sm"></div>
@@ -106,26 +89,17 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const TRACKING="index.html";
 
-/* === KALENDER MODERN === */
 flatpickr("#janjiTanggal", {
   dateFormat: "m/d/Y",
   minDate: "today",
-  disable: [
-    function(date){
-      return (date.getDay() === 0 || date.getDay() === 6);
-    }
-  ]
+  disable: [d => d.getDay()==0 || d.getDay()==6]
 });
 
-document.getElementById("janjiTanggal").addEventListener("change",buildJanji);
-document.getElementById("janjiJam").addEventListener("change",buildJanji);
+janjiTanggal.onchange = buildJanji;
+janjiJam.onchange = buildJanji;
 
 function buildJanji(){
-  if(janjiTanggal.value && janjiJam.value){
-    janji.value = janjiTanggal.value + " (" + janjiJam.value + ")";
-  } else {
-    janji.value = "";
-  }
+  janji.value = janjiTanggal.value && janjiJam.value ? janjiTanggal.value+" ("+janjiJam.value+")" : "";
 }
 
 function valid(){
@@ -140,17 +114,8 @@ async function kirim(){
 
   msg.textContent="Mengirim aduan...";
 
-  if(typeof grecaptcha === "undefined"){
-    msg.textContent="❌ reCAPTCHA belum siap, refresh halaman.";
-    return;
-  }
-
-  grecaptcha.ready(async function(){
-
-    const captcha = await grecaptcha.execute(
-      "6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu",
-      {action:"submit"}
-    );
+  grecaptcha.ready(async ()=>{
+    const captcha = await grecaptcha.execute("6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu",{action:"submit"});
 
     let files=[];
     for(let f of foto.files){
@@ -158,44 +123,18 @@ async function kirim(){
       files.push({file:b.split(",")[1], mimeType:f.type});
     }
 
-    const body={
-      action:"create",
-      captcha:captcha,
-      nama:nama.value,
-      hp:hp.value,
-      email:email.value,
-      rusun:rusun.value,
-      unit:unit.value,
-      laporan:laporan.value,
-      janji:janji.value,
-      pernyataan:"YA",
-      files:files
-    };
+    const body={action:"create",captcha,nama:nama.value,hp:hp.value,email:email.value,rusun:rusun.value,unit:unit.value,laporan:laporan.value,janji:janji.value,pernyataan:"YA",files};
 
-    try{
-      const r = await fetch(API,{method:"POST",body:JSON.stringify(body)});
-      const j = await r.json();
+    const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
+    const j=await r.json();
 
-      if(j.success){
-        location.href = TRACKING + "?ticket=" + j.id;
-      } else {
-        console.log("API RESPONSE:", j);
-        msg.textContent="❌ " + (j.error || "Gagal mengirim aduan");
-      }
-
-    }catch(err){
-      console.error(err);
-      msg.textContent="❌ Gagal terhubung ke server";
-    }
+    if(j.success) location.href = TRACKING + "?ticket=" + j.id;
+    else msg.textContent="❌ " + (j.error || "Gagal mengirim aduan");
   });
 }
 
 function toBase64(f){
-  return new Promise(res=>{
-    const r=new FileReader();
-    r.onload=()=>res(r.result);
-    r.readAsDataURL(f);
-  });
+  return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f);});
 }
 </script>
 </body>

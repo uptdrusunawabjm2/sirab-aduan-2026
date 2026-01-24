@@ -11,18 +11,22 @@
 
 <!-- SIDEBAR -->
 <div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300">
+
   <div class="p-4 border-b border-slate-800">
     <div class="text-xl font-bold">Admin Panel</div>
     <div class="text-xs text-slate-400">Pengaduan Rusunawa</div>
   </div>
+
   <div class="flex-1 p-4 space-y-2 text-sm">
     <div class="p-2 rounded bg-slate-800">📋 Data Aduan</div>
   </div>
+
   <div class="p-4 border-t border-slate-800">
     <button onclick="logout()" class="w-full bg-red-600/20 text-red-400 border border-red-600 px-3 py-2 rounded hover:bg-red-600 hover:text-white transition">
       🚪 Logout
     </button>
   </div>
+
 </div>
 
 <!-- MAIN -->
@@ -55,7 +59,7 @@
   </div>
 </div>
 
-<!-- FILTER -->
+<!-- FILTER + EXPORT -->
 <div class="grid md:grid-cols-5 gap-2">
   <input id="search" oninput="renderTable()" placeholder="🔍 Cari aduan..."
     class="p-2 rounded bg-slate-800 border border-slate-700">
@@ -68,6 +72,7 @@
     <option value="SELESAI">Selesai</option>
   </select>
 
+  <!-- TAMBAHAN: FILTER TAHUN -->
   <select id="filterTahun" onchange="applyYear()"
     class="p-2 rounded bg-slate-800 border border-slate-700">
     <option value="">Semua Tahun</option>
@@ -87,7 +92,7 @@
 </div>
 </div>
 
-<!-- MODAL UPDATE -->
+<!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
 
@@ -103,6 +108,7 @@
 <textarea id="hasilPenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
 
 <textarea id="catatan" placeholder="Catatan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
+
 <input id="foto" type="file" accept="image/*" multiple class="text-xs">
 
 <div class="flex gap-2 pt-2">
@@ -119,9 +125,12 @@ const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-G
 const key = sessionStorage.getItem("adminKey");
 if(!key) location.href="login.html";
 
-let HEAD=[], RAW=[], DATA=[], CURRENT_ROW=null;
+let HEAD=[], DATA=[], RAW=[], SID="";
+const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status"];
 
-/* ================= LOAD ================= */
+load();
+
+/* ===== LOAD ASLI + SIMPAN RAW ===== */
 async function load(){
   const r = await fetch(`${API}?action=all&key=${key}`);
   const j = await r.json();
@@ -130,46 +139,36 @@ async function load(){
   hitungRekap();
   renderTable();
 }
-load();
 
-/* ================= FOTO FORMAT ================= */
+/* ===== TAMBAHAN: FORMAT FOTO ===== */
 function renderFotoCell(val){
   if(!val) return "";
   const links = String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
-  if(links.length === 1){
-    return `<a href="${links[0]}" target="_blank" class="text-cyan-400 hover:underline">Lihat foto</a>`;
-  }
+  if(links.length===1) return `<a href="${links[0]}" target="_blank" class="text-cyan-400 hover:underline">Lihat foto</a>`;
   return links.map((l,i)=>`<a href="${l}" target="_blank" class="text-cyan-400 hover:underline block">Lihat foto ${i+1}</a>`).join("");
 }
 
-/* ================= TAHUN ================= */
+/* ===== TAMBAHAN: FILTER TAHUN ===== */
 function buildYear(){
   const idx = HEAD.indexOf("Submission Date");
-  let years = [...new Set(RAW.map(r=>{
-    const d=new Date(r[idx]); return isNaN(d)?null:d.getFullYear();
-  }).filter(Boolean))].sort((a,b)=>b-a);
-
+  let years=[...new Set(RAW.map(r=>{const d=new Date(r[idx]);return isNaN(d)?null:d.getFullYear();}).filter(Boolean))].sort((a,b)=>b-a);
   filterTahun.innerHTML='<option value="">Semua Tahun</option>';
-  years.forEach(y=>{
-    filterTahun.innerHTML+=`<option value="${y}">${y}</option>`;
-  });
+  years.forEach(y=>filterTahun.innerHTML+=`<option value="${y}">${y}</option>`);
 }
 
 function applyYear(){
-  const y = filterTahun.value;
-  if(!y){ DATA=[...RAW]; }
+  const y=filterTahun.value;
+  if(!y) DATA=[...RAW];
   else{
-    const idx = HEAD.indexOf("Submission Date");
-    DATA = RAW.filter(r=>{
-      const d=new Date(r[idx]);
-      return !isNaN(d) && d.getFullYear()==y;
-    });
+    const idx=HEAD.indexOf("Submission Date");
+    DATA=RAW.filter(r=>{const d=new Date(r[idx]);return !isNaN(d)&&d.getFullYear()==y});
   }
   hitungRekap();
   renderTable();
 }
 
-/* ================= STATUS & REKAP ================= */
+/* ===== FUNGSI LAMA TETAP ===== */
+
 function getStatus(row){
   const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
   if(m["Teknisi"]&&m["Tanggal Penanganan"]&&m["Hasil Penanganan"]) return "SELESAI";
@@ -191,30 +190,48 @@ function hitungRekap(){
   rSelesai.textContent=s;
 }
 
-/* ================= TABLE ================= */
-function renderTable(){
-  const rows = DATA.filter(r=>{
-    const q=search.value.toLowerCase();
-    const st=filterStatus.value;
-    if(q && !r.join(" ").toLowerCase().includes(q)) return false;
-    if(st && getStatus(r)!==st) return false;
+function formatTanggal(val){
+  if(!val) return "";
+  const d=new Date(val);
+  if(isNaN(d)) return val;
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+}
+
+function getVisibleRows(){
+  const q=search.value.toLowerCase();
+  const f=filterStatus.value;
+  return DATA.filter(r=>{
+    const txt=r.join(" ").toLowerCase();
+    const st=getStatus(r);
+    if(q && !txt.includes(q)) return false;
+    if(f && st!==f) return false;
     return true;
   });
+}
+
+function renderTable(){
+  const rows = getVisibleRows();
+  let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
 
   let h="<tr class='bg-slate-800 sticky top-0'>";
-  HEAD.forEach(c=>h+=`<th class="p-2 border border-slate-700">${c}</th>`);
+  cols.forEach(c=>h+=`<th class="p-2 border border-slate-700 text-left">${c.h}</th>`);
   h+="<th class='p-2 border border-slate-700 text-center'>STATUS</th>";
   h+="<th class='p-2 border border-slate-700 text-center'>AKSI</th></tr>";
 
   rows.forEach(r=>{
     const st=getStatus(r);
     h+="<tr class='hover:bg-slate-800'>";
-    r.forEach((v,i)=>{
-      let val=v||"";
-      if(HEAD[i].toLowerCase().includes("foto")) val=renderFotoCell(val);
+    cols.forEach(c=>{
+      let val = r[c.i] || "";
+      if(c.h==="Submission Date" || c.h==="Tanggal Periksa" || c.h==="Tanggal Penanganan"){
+        val = formatTanggal(val);
+      }
+      if(c.h.toLowerCase().includes("foto")){
+        val = renderFotoCell(val);
+      }
       h+=`<td class="p-2 border border-slate-800 align-top">${val}</td>`;
     });
-    h+=`<td class="p-2 border border-slate-800 text-center">${st}</td>`;
+    h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td>`;
     h+=`<td class="p-2 border border-slate-800 text-center">
       <button onclick='openModal(${JSON.stringify(r)})'
       class="bg-blue-600 px-3 py-1 rounded text-xs">Aksi</button></td></tr>`;
@@ -223,29 +240,12 @@ function renderTable(){
   table.innerHTML=h;
 }
 
-/* ================= MODAL UPDATE ================= */
-function openModal(row){
-  CURRENT_ROW=row;
-  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
-  mid.textContent="Submission ID: "+m["Submission ID"];
+/* ===== SISANYA ASLI ===== */
 
-  pemeriksa.value=m["Pemeriksa"]||"";
-  hasilPeriksa.value=m["Hasil Periksa"]||"";
-  teknisi.value=m["Teknisi"]||"";
-  hasilPenanganan.value=m["Hasil Penanganan"]||"";
-  catatan.value=m["Catatan"]||"";
-  tglPeriksa.value=toInputDate(m["Tanggal Periksa"]);
-  tglPenanganan.value=toInputDate(m["Tanggal Penanganan"]);
-
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-}
-
-function closeModal(){
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
-  foto.value="";
-  msg.textContent="";
+function badge(st){
+  if(st==="SELESAI") return `<span class="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs">SELESAI</span>`;
+  if(st==="DIPERIKSA") return `<span class="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-xs">DIPERIKSA</span>`;
+  return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
 }
 
 async function simpan(){
@@ -256,10 +256,8 @@ async function simpan(){
     files.push({file:b64.split(",")[1], mimeType:f.type});
   }
 
-  const id = CURRENT_ROW[HEAD.indexOf("Submission ID")];
-
   const body={
-    action:"update", key, id,
+    action:"update", key, id:SID,
     pemeriksa:pemeriksa.value,
     hasilPeriksa:hasilPeriksa.value,
     tglPeriksa:tglPeriksa.value,
@@ -277,10 +275,34 @@ async function simpan(){
   else msg.textContent="❌ Gagal";
 }
 
+function openModal(row){
+  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
+  SID=m["Submission ID"];
+  mid.textContent="Submission ID: "+SID;
+
+  pemeriksa.value=m["Pemeriksa"]||"";
+  hasilPeriksa.value=m["Hasil Periksa"]||"";
+  teknisi.value=m["Teknisi"]||"";
+  hasilPenanganan.value=m["Hasil Penanganan"]||"";
+  catatan.value=m["Catatan"]||"";
+  tglPeriksa.value=toInputDate(m["Tanggal Periksa"]);
+  tglPenanganan.value=toInputDate(m["Tanggal Penanganan"]);
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
 function toInputDate(v){
   if(!v) return "";
   const d=new Date(v); if(isNaN(d)) return "";
   return d.toISOString().split("T")[0];
+}
+
+function closeModal(){
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  foto.value="";
+  msg.textContent="";
 }
 
 function toBase64(f){ 
@@ -291,7 +313,6 @@ function toBase64(f){
   });
 }
 
-/* ================= UTIL ================= */
 function toggleSidebar(){ sidebar.classList.toggle("w-64"); sidebar.classList.toggle("w-0"); sidebar.classList.toggle("overflow-hidden");}
 function logout(){ sessionStorage.clear(); location.href="login.html"; }
 </script>

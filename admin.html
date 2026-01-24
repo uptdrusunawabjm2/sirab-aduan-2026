@@ -121,7 +121,11 @@
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
-const key = sessionStorage.getItem("adminKey");
+
+/* ========================= */
+/* ✅ SATU-SATUNYA PERBAIKAN */
+/* ========================= */
+const key = sessionStorage.getItem("key");
 if(!key) location.href="login.html";
 
 let HEAD=[], DATA=[], RAW=[], SID="";
@@ -187,7 +191,7 @@ function hitungRekap(){
   rSelesai.textContent=s;
 }
 
-/* ===== TABEL (HEADER DISERAGAMKAN) ===== */
+/* ===== TABEL ===== */
 function renderTable(){
   const rows = getVisibleRows();
   let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));

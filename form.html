@@ -6,13 +6,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- FLATPICKR (KALENDER MODERN) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <script src="https://www.google.com/recaptcha/api.js?render=6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu"></script>
 
 <style>
 body{background:radial-gradient(circle at top,#0f172a,#020617);}
 .card{backdrop-filter:blur(12px);background:linear-gradient(145deg,rgba(30,41,59,.92),rgba(15,23,42,.92));}
-.input{width:100%;padding:14px;font-size:16px;background:#020617;border:1px solid #334155;border-radius:14px;}
+.input{width:100%;padding:14px;font-size:16px;background:#020617;border:1px solid #334155;border-radius:14px;color:white;}
 .blockbox{border:1px solid #334155;border-radius:18px;padding:14px;background:#020617;}
+.flatpickr-calendar{background:#020617;color:white;border:1px solid #334155;}
+.flatpickr-day{color:white;}
+.flatpickr-day.today{border-color:#22d3ee;}
+.flatpickr-day.selected{background:#22d3ee;color:black;}
 </style>
 </head>
 
@@ -46,13 +55,13 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 <!-- JANJI TEMU -->
 <div class="blockbox">
   <div class="flex items-center gap-2 mb-3 text-cyan-400 font-semibold">
-    📅 Janji Temu (Senin – Jumat)
+    📅 Janji Temu (Hari kerja)
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
     <div>
       <div class="text-xs text-slate-400 mb-1">Pilih tanggal</div>
-      <input id="janjiTanggal" type="date" class="input">
+      <input id="janjiTanggal" placeholder="mm/dd/yyyy" class="input">
     </div>
 
     <div>
@@ -97,24 +106,20 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const TRACKING="index.html";
 
-/* ===== AKTIFKAN SETELAH HALAMAN SIAP ===== */
-document.addEventListener("DOMContentLoaded",()=>{
-
-  janjiTanggal.addEventListener("change",()=>{
-    const d=new Date(janjiTanggal.value);
-    const day=d.getDay();
-    if(day===0||day===6){
-      alert("Janji temu hanya tersedia hari Senin sampai Jumat.");
-      janjiTanggal.value="";
+/* === KALENDER MODERN === */
+flatpickr("#janjiTanggal", {
+  dateFormat: "m/d/Y",
+  minDate: "today",
+  disable: [
+    function(date){
+      return (date.getDay() === 0 || date.getDay() === 6);
     }
-    buildJanji();
-  });
-
-  janjiJam.addEventListener("change",buildJanji);
-
+  ]
 });
 
-/* ===== GABUNGKAN TANGGAL + JAM ===== */
+document.getElementById("janjiTanggal").addEventListener("change",buildJanji);
+document.getElementById("janjiJam").addEventListener("change",buildJanji);
+
 function buildJanji(){
   if(janjiTanggal.value && janjiJam.value){
     janji.value = janjiTanggal.value + " (" + janjiJam.value + ")";

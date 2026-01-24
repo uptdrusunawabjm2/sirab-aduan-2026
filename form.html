@@ -140,36 +140,54 @@ async function kirim(){
 
   msg.textContent="Mengirim aduan...";
 
-  const captcha = await grecaptcha.execute("6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu",{action:"submit"});
-
-  let files=[];
-  for(let f of foto.files){
-    const b=await toBase64(f);
-    files.push({file:b.split(",")[1], mimeType:f.type});
+  if(typeof grecaptcha === "undefined"){
+    msg.textContent="❌ reCAPTCHA belum siap, refresh halaman.";
+    return;
   }
 
-  const body={
-    action:"create",
-    captcha:captcha,
-    nama:nama.value,
-    hp:hp.value,
-    email:email.value,
-    rusun:rusun.value,
-    unit:unit.value,
-    laporan:laporan.value,
-    janji:janji.value,
-    pernyataan:"YA",
-    files:files
-  };
+  grecaptcha.ready(async function(){
 
-  const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
-  const j=await r.json();
+    const captcha = await grecaptcha.execute(
+      "6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu",
+      {action:"submit"}
+    );
 
-  if(j.success){
-    location.href = TRACKING + "?ticket=" + j.id;
-  } else {
-    msg.textContent="❌ Gagal mengirim aduan";
-  }
+    let files=[];
+    for(let f of foto.files){
+      const b=await toBase64(f);
+      files.push({file:b.split(",")[1], mimeType:f.type});
+    }
+
+    const body={
+      action:"create",
+      captcha:captcha,
+      nama:nama.value,
+      hp:hp.value,
+      email:email.value,
+      rusun:rusun.value,
+      unit:unit.value,
+      laporan:laporan.value,
+      janji:janji.value,
+      pernyataan:"YA",
+      files:files
+    };
+
+    try{
+      const r = await fetch(API,{method:"POST",body:JSON.stringify(body)});
+      const j = await r.json();
+
+      if(j.success){
+        location.href = TRACKING + "?ticket=" + j.id;
+      } else {
+        console.log("API RESPONSE:", j);
+        msg.textContent="❌ " + (j.error || "Gagal mengirim aduan");
+      }
+
+    }catch(err){
+      console.error(err);
+      msg.textContent="❌ Gagal terhubung ke server";
+    }
+  });
 }
 
 function toBase64(f){

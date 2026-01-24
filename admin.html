@@ -59,7 +59,7 @@
   </div>
 </div>
 
-<!-- FILTER + EXPORT -->
+<!-- FILTER -->
 <div class="grid md:grid-cols-5 gap-2">
   <input id="search" oninput="renderTable()" placeholder="🔍 Cari aduan..."
     class="p-2 rounded bg-slate-800 border border-slate-700">
@@ -72,7 +72,6 @@
     <option value="SELESAI">Selesai</option>
   </select>
 
-  <!-- TAMBAHAN: FILTER TAHUN -->
   <select id="filterTahun" onchange="applyYear()"
     class="p-2 rounded bg-slate-800 border border-slate-700">
     <option value="">Semua Tahun</option>
@@ -92,7 +91,7 @@
 </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL (TIDAK DIUBAH) -->
 <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
 
@@ -130,7 +129,6 @@ const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status"];
 
 load();
 
-/* ===== LOAD ASLI + SIMPAN RAW ===== */
 async function load(){
   const r = await fetch(`${API}?action=all&key=${key}`);
   const j = await r.json();
@@ -140,7 +138,7 @@ async function load(){
   renderTable();
 }
 
-/* ===== TAMBAHAN: FORMAT FOTO ===== */
+/* ===== FORMAT FOTO ===== */
 function renderFotoCell(val){
   if(!val) return "";
   const links = String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
@@ -148,7 +146,7 @@ function renderFotoCell(val){
   return links.map((l,i)=>`<a href="${l}" target="_blank" class="text-cyan-400 hover:underline block">Lihat foto ${i+1}</a>`).join("");
 }
 
-/* ===== TAMBAHAN: FILTER TAHUN ===== */
+/* ===== FILTER TAHUN ===== */
 function buildYear(){
   const idx = HEAD.indexOf("Submission Date");
   let years=[...new Set(RAW.map(r=>{const d=new Date(r[idx]);return isNaN(d)?null:d.getFullYear();}).filter(Boolean))].sort((a,b)=>b-a);
@@ -167,8 +165,7 @@ function applyYear(){
   renderTable();
 }
 
-/* ===== FUNGSI LAMA TETAP ===== */
-
+/* ===== STATUS & REKAP ===== */
 function getStatus(row){
   const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
   if(m["Teknisi"]&&m["Tanggal Penanganan"]&&m["Hasil Penanganan"]) return "SELESAI";
@@ -190,31 +187,16 @@ function hitungRekap(){
   rSelesai.textContent=s;
 }
 
-function formatTanggal(val){
-  if(!val) return "";
-  const d=new Date(val);
-  if(isNaN(d)) return val;
-  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
-}
-
-function getVisibleRows(){
-  const q=search.value.toLowerCase();
-  const f=filterStatus.value;
-  return DATA.filter(r=>{
-    const txt=r.join(" ").toLowerCase();
-    const st=getStatus(r);
-    if(q && !txt.includes(q)) return false;
-    if(f && st!==f) return false;
-    return true;
-  });
-}
-
+/* ===== TABEL (HEADER DISERAGAMKAN) ===== */
 function renderTable(){
   const rows = getVisibleRows();
   let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
 
   let h="<tr class='bg-slate-800 sticky top-0'>";
-  cols.forEach(c=>h+=`<th class="p-2 border border-slate-700 text-left">${c.h}</th>`);
+  cols.forEach(c=>{
+    let display = String(c.h).toUpperCase();
+    h+=`<th class="p-2 border border-slate-700 text-left">${display}</th>`;
+  });
   h+="<th class='p-2 border border-slate-700 text-center'>STATUS</th>";
   h+="<th class='p-2 border border-slate-700 text-center'>AKSI</th></tr>";
 
@@ -240,7 +222,26 @@ function renderTable(){
   table.innerHTML=h;
 }
 
-/* ===== SISANYA ASLI ===== */
+function getVisibleRows(){
+  const q=search.value.toLowerCase();
+  const f=filterStatus.value;
+  return DATA.filter(r=>{
+    const txt=r.join(" ").toLowerCase();
+    const st=getStatus(r);
+    if(q && !txt.includes(q)) return false;
+    if(f && st!==f) return false;
+    return true;
+  });
+}
+
+function formatTanggal(val){
+  if(!val) return "";
+  const d=new Date(val);
+  if(isNaN(d)) return val;
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+}
+
+/* ===== FUNGSI ASLI ===== */
 
 function badge(st){
   if(st==="SELESAI") return `<span class="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs">SELESAI</span>`;

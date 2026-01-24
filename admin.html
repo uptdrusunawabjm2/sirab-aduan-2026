@@ -14,264 +14,131 @@
 
   <div class="p-4 border-b border-slate-800">
     <div class="text-xl font-bold">Admin Panel</div>
-    <div class="text-xs text-slate-400">Pengaduan Rusunawa</div>
   </div>
 
   <div class="flex-1 p-4 space-y-2 text-sm">
-    <div class="p-2 rounded bg-slate-800">📋 Data Aduan</div>
+    <button onclick="toggleSidebar()" class="w-full text-left hover:text-cyan-400">☰ Toggle</button>
   </div>
 
   <div class="p-4 border-t border-slate-800">
-    <button onclick="logout()" class="w-full bg-red-600/20 text-red-400 border border-red-600 px-3 py-2 rounded hover:bg-red-600 hover:text-white transition">
-      🚪 Logout
+    <button onclick="logout()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded">
+      Logout
     </button>
   </div>
 
 </div>
 
 <!-- MAIN -->
-<div class="flex-1 flex flex-col">
+<div class="flex-1 p-6 overflow-x-auto">
 
-<div class="bg-slate-900 border-b border-slate-800 p-3 flex items-center gap-3">
-  <button onclick="toggleSidebar()" class="bg-slate-800 px-3 py-1 rounded">☰</button>
-  <div class="font-semibold flex-1 text-center">Dashboard Admin Aduan</div>
-</div>
+<h1 class="text-xl font-bold mb-4 text-center">Dashboard Admin Aduan</h1>
 
-<div class="p-4 space-y-4">
-
-<!-- REKAP -->
-<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-  <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-    <div class="text-slate-400 text-sm">Total Aduan</div>
-    <div id="rTotal" class="text-2xl font-bold">0</div>
-  </div>
-  <div class="bg-yellow-500/20 border border-yellow-500 rounded-xl p-4">
-    <div class="text-yellow-300 text-sm">Pending</div>
-    <div id="rPending" class="text-2xl font-bold text-yellow-400">0</div>
-  </div>
-  <div class="bg-blue-600/20 border border-blue-600 rounded-xl p-4">
-    <div class="text-blue-300 text-sm">Diperiksa</div>
-    <div id="rPeriksa" class="text-2xl font-bold text-blue-400">0</div>
-  </div>
-  <div class="bg-green-600/20 border border-green-600 rounded-xl p-4">
-    <div class="text-green-300 text-sm">Selesai</div>
-    <div id="rSelesai" class="text-2xl font-bold text-green-400">0</div>
-  </div>
-</div>
-
-<!-- FILTER + EXPORT -->
-<div class="grid md:grid-cols-4 gap-2">
-  <input id="search" oninput="renderTable()" placeholder="🔍 Cari aduan..."
-    class="p-2 rounded bg-slate-800 border border-slate-700">
-  <select id="filterStatus" onchange="renderTable()"
-    class="p-2 rounded bg-slate-800 border border-slate-700">
-    <option value="">Semua Status</option>
-    <option value="PENDING">Pending</option>
-    <option value="DIPERIKSA">Diperiksa</option>
-    <option value="SELESAI">Selesai</option>
-  </select>
-
-  <button onclick="exportExcel()"
-    class="bg-emerald-600 hover:bg-emerald-700 transition rounded px-4 py-2 font-semibold">
-    📤 Export Excel
-  </button>
-</div>
-
-<!-- TABLE -->
-<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[65vh]">
-  <table class="w-full text-sm" id="table"></table>
+<div class="overflow-auto border border-slate-800 rounded-lg">
+<table class="min-w-full text-xs text-left">
+<thead class="bg-slate-900 text-slate-300">
+<tr id="thead"></tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 </div>
 
 </div>
+
+<!-- MODAL -->
+<div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+<div class="bg-slate-900 p-6 rounded-lg w-full max-w-lg border border-slate-700">
+
+<h2 class="font-bold mb-3 text-lg">Update Aduan</h2>
+<div id="sid" class="text-xs text-slate-400 mb-3"></div>
+
+<input id="pemeriksa" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Pemeriksa">
+
+<input id="tglPeriksa" type="date" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700">
+
+<textarea id="hasilPeriksa" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Hasil Periksa"></textarea>
+
+<input id="teknisi" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Teknisi">
+
+<input id="tglPenanganan" type="date" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700">
+
+<textarea id="hasilPenanganan" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Hasil Penanganan"></textarea>
+
+<textarea id="catatan" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Catatan"></textarea>
+
+<!-- MULTI FOTO -->
+<input id="foto" type="file" multiple accept="image/*" class="text-xs mb-2">
+
+<div id="msg" class="text-center text-sm mb-3"></div>
+
+<div class="flex gap-2">
+<button onclick="simpan()" class="flex-1 bg-blue-600 hover:bg-blue-700 py-2 rounded">Simpan</button>
+<button onclick="closeModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded">Batal</button>
 </div>
 
-<!-- MODAL (tetap sama, tidak diubah) -->
-<div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
-<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
-
-<h2 class="text-lg font-bold">Update Aduan</h2>
-<div class="text-xs text-slate-400" id="mid"></div>
-
-<input id="pemeriksa" placeholder="Pemeriksa" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-<input id="tglPeriksa" type="date" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-<textarea id="hasilPeriksa" placeholder="Hasil Periksa" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
-
-<input id="teknisi" placeholder="Teknisi" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-<input id="tglPenanganan" type="date" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-<textarea id="hasilPenanganan" placeholder="Hasil Penanganan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
-
-<textarea id="catatan" placeholder="Catatan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
-<input id="foto" type="file" accept="image/*" class="text-xs">
-
-<div class="flex gap-2 pt-2">
-  <button onclick="simpan()" class="flex-1 bg-blue-600 p-2 rounded">Simpan</button>
-  <button onclick="closeModal()" class="flex-1 bg-slate-700 p-2 rounded">Batal</button>
-</div>
-
-<div id="msg" class="text-center text-sm"></div>
 </div>
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
-const key = sessionStorage.getItem("adminKey");
+const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
+const key=sessionStorage.getItem("key");
 if(!key) location.href="login.html";
 
-let HEAD=[], DATA=[], SID="";
-const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status"];
+const thead=document.getElementById("thead");
+const tbody=document.getElementById("tbody");
+const modal=document.getElementById("modal");
+const msg=document.getElementById("msg");
 
-load();
+let HEAD=[], ROWS=[], CURRENT_ID="";
 
 async function load(){
-  const r = await fetch(`${API}?action=all&key=${key}`);
-  const j = await r.json();
-  HEAD=j.header; DATA=j.data;
-  hitungRekap();
-  renderTable();
+  const r=await fetch(`${API}?action=all&key=${key}`);
+  const j=await r.json();
+  HEAD=j.header; ROWS=j.data;
+  render();
 }
 
-function getStatus(row){
-  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
-  if(m["Teknisi"]&&m["Tanggal Penanganan"]&&m["Hasil Penanganan"]) return "SELESAI";
-  if(m["Pemeriksa"]&&m["Tanggal Periksa"]&&m["Hasil Periksa"]) return "DIPERIKSA";
-  return "PENDING";
-}
+function render(){
+  thead.innerHTML="";
+  HEAD.forEach(h=>thead.innerHTML+=`<th class="p-2 border-b border-slate-800">${h}</th>`);
+  thead.innerHTML+=`<th class="p-2 border-b border-slate-800">AKSI</th>`;
 
-function hitungRekap(){
-  let p=0,d=0,s=0;
-  DATA.forEach(r=>{
-    const st=getStatus(r);
-    if(st==="PENDING") p++;
-    else if(st==="DIPERIKSA") d++;
-    else if(st==="SELESAI") s++;
-  });
-  rTotal.textContent=DATA.length;
-  rPending.textContent=p;
-  rPeriksa.textContent=d;
-  rSelesai.textContent=s;
-}
-
-function formatTanggal(val){
-  if(!val) return "";
-  const d=new Date(val);
-  if(isNaN(d)) return val;
-  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
-}
-
-function getVisibleRows(){
-  const q=search.value.toLowerCase();
-  const f=filterStatus.value;
-  return DATA.filter(r=>{
-    const txt=r.join(" ").toLowerCase();
-    const st=getStatus(r);
-    if(q && !txt.includes(q)) return false;
-    if(f && st!==f) return false;
-    return true;
+  tbody.innerHTML="";
+  ROWS.forEach(r=>{
+    let tr="<tr class='border-b border-slate-800 hover:bg-slate-900'>";
+    r.forEach(c=>tr+=`<td class="p-2">${c||""}</td>`);
+    tr+=`<td class="p-2"><button onclick="openModal('${r[HEAD.indexOf("Submission ID")]}')" class="bg-cyan-600 px-2 py-1 rounded text-xs">Aksi</button></td></tr>`;
+    tbody.innerHTML+=tr;
   });
 }
 
-function renderTable(){
-  const rows = getVisibleRows();
-  let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
-
-  let h="<tr class='bg-slate-800 sticky top-0'>";
-  cols.forEach(c=>h+=`<th class="p-2 border border-slate-700 text-left">${c.h}</th>`);
-  h+="<th class='p-2 border border-slate-700 text-center'>STATUS</th>";
-  h+="<th class='p-2 border border-slate-700 text-center'>AKSI</th></tr>";
-
-  rows.forEach(r=>{
-    const st=getStatus(r);
-    h+="<tr class='hover:bg-slate-800'>";
-    cols.forEach(c=>{
-      let val = r[c.i] || "";
-      if(c.h==="Submission Date" || c.h==="Tanggal Periksa" || c.h==="Tanggal Penanganan"){
-        val = formatTanggal(val);
-      }
-      h+=`<td class="p-2 border border-slate-800 align-top">${val}</td>`;
-    });
-    h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td>`;
-    h+=`<td class="p-2 border border-slate-800 text-center">
-      <button onclick='openModal(${JSON.stringify(r)})'
-      class="bg-blue-600 px-3 py-1 rounded text-xs">Aksi</button></td></tr>`;
-  });
-
-  table.innerHTML=h;
-}
-
-function badge(st){
-  if(st==="SELESAI") return `<span class="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs">SELESAI</span>`;
-  if(st==="DIPERIKSA") return `<span class="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-xs">DIPERIKSA</span>`;
-  return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
-}
-
-/* EXPORT CSV (EXCEL) */
-function exportExcel(){
-  let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
-  let rows = getVisibleRows();
-
-  let csv = [];
-  csv.push(cols.map(c=>`"${c.h}"`).join(",") + ',"STATUS"');
-
-  rows.forEach(r=>{
-    let line = cols.map(c=>{
-      let v=r[c.i]||"";
-      if(c.h==="Submission Date"||c.h==="Tanggal Periksa"||c.h==="Tanggal Penanganan"){
-        v=formatTanggal(v);
-      }
-      return `"${String(v).replace(/"/g,'""')}"`;
-    }).join(",");
-    line += `,"${getStatus(r)}"`;
-    csv.push(line);
-  });
-
-  const blob = new Blob([csv.join("\n")],{type:"text/csv;charset=utf-8;"});
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  const d = new Date().toISOString().slice(0,10);
-  link.download = `laporan-aduan-${d}.csv`;
-  link.click();
-}
-
-function openModal(row){
-  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
-  SID=m["Submission ID"];
-  mid.textContent="Submission ID: "+SID;
-
-  pemeriksa.value=m["Pemeriksa"]||"";
-  hasilPeriksa.value=m["Hasil Periksa"]||"";
-  teknisi.value=m["Teknisi"]||"";
-  hasilPenanganan.value=m["Hasil Penanganan"]||"";
-  catatan.value=m["Catatan"]||"";
-  tglPeriksa.value=toInputDate(m["Tanggal Periksa"]);
-  tglPenanganan.value=toInputDate(m["Tanggal Penanganan"]);
-
+function openModal(id){
+  CURRENT_ID=id;
+  sid.textContent="Submission ID: "+id;
   modal.classList.remove("hidden");
   modal.classList.add("flex");
 }
 
-function toInputDate(v){
-  if(!v) return "";
-  const d=new Date(v); if(isNaN(d)) return "";
-  return d.toISOString().split("T")[0];
-}
-
 function closeModal(){
   modal.classList.add("hidden");
-  modal.classList.remove("flex");
-  foto.value="";
   msg.textContent="";
+  foto.value="";
 }
 
 async function simpan(){
   msg.textContent="Menyimpan...";
-  let file=foto.files[0], b64="", name="", type="";
-  if(file){
-    b64=await toBase64(file); b64=b64.split(",")[1];
-    name=file.name; type=file.type;
+
+  let files=[];
+  if(foto.files.length){
+    for(let f of foto.files){
+      const b64=await toBase64(f);
+      files.push({file:b64.split(",")[1], mimeType:f.type});
+    }
   }
 
   const body={
-    action:"update", key, id:SID,
+    action:"update",
+    key:key,
+    id:CURRENT_ID,
     pemeriksa:pemeriksa.value,
     hasilPeriksa:hasilPeriksa.value,
     tglPeriksa:tglPeriksa.value,
@@ -279,7 +146,8 @@ async function simpan(){
     hasilPenanganan:hasilPenanganan.value,
     tglPenanganan:tglPenanganan.value,
     catatan:catatan.value,
-    file:b64, filename:name, mimeType:type
+    status:"SELESAI",
+    files:files
   };
 
   const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
@@ -289,9 +157,26 @@ async function simpan(){
   else msg.textContent="❌ Gagal";
 }
 
-function toBase64(f){ return new Promise(res=>{const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f);});}
-function toggleSidebar(){ sidebar.classList.toggle("w-64"); sidebar.classList.toggle("w-0"); sidebar.classList.toggle("overflow-hidden");}
-function logout(){ sessionStorage.clear(); location.href="login.html"; }
+function toBase64(f){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.readAsDataURL(f);
+  });
+}
+
+function toggleSidebar(){
+  sidebar.classList.toggle("w-64");
+  sidebar.classList.toggle("w-0");
+  sidebar.classList.toggle("overflow-hidden");
+}
+
+function logout(){
+  sessionStorage.clear();
+  location.href="login.html";
+}
+
+load();
 </script>
 </body>
 </html>

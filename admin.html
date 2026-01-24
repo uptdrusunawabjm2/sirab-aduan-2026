@@ -9,7 +9,8 @@
 
 <body class="bg-slate-950 text-white min-h-screen flex">
 
-<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
+<!-- SIDEBAR -->
+<div class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
   <div class="p-4 font-bold border-b border-slate-800">Dashboard Admin</div>
   <div class="flex-1"></div>
   <div class="p-4 border-t border-slate-800">
@@ -17,8 +18,11 @@
   </div>
 </div>
 
+<!-- MAIN -->
 <div class="flex-1 p-6 overflow-x-auto">
 <h1 class="text-xl font-bold mb-4 text-center">Dashboard Admin Aduan</h1>
+
+<div id="info" class="text-center text-sm text-slate-400 mb-3"></div>
 
 <div class="overflow-auto border border-slate-800 rounded-lg">
 <table class="min-w-full text-xs">
@@ -57,30 +61,55 @@
 </div>
 
 <script>
-const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
-const key=sessionStorage.getItem("key");
+/* ================= KONFIG ================= */
+const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
+/* ========================================== */
+
+const key = sessionStorage.getItem("key");
 if(!key) location.href="login.html";
 
-const thead=document.getElementById("thead");
-const tbody=document.getElementById("tbody");
+const thead = document.getElementById("thead");
+const tbody = document.getElementById("tbody");
+const info  = document.getElementById("info");
+
 let HEAD=[], ROWS=[], CURRENT_ID="";
 
 async function load(){
-  const r=await fetch(`${API}?action=all&key=${key}`);
-  const j=await r.json();
-  HEAD=j.header; ROWS=j.data;
-  render();
+  info.textContent = "Memuat data...";
+  try{
+    const r = await fetch(`${API}?action=all&key=${encodeURIComponent(key)}`);
+    const j = await r.json();
+
+    if(j.error){
+      info.textContent = "❌ " + j.error;
+      return;
+    }
+
+    if(!j.header || !j.data){
+      info.textContent = "❌ Data API tidak valid";
+      return;
+    }
+
+    HEAD = j.header;
+    ROWS = j.data;
+
+    info.textContent = "Total data: " + ROWS.length;
+    render();
+
+  }catch(e){
+    info.textContent = "❌ Gagal koneksi API";
+  }
 }
 
 function render(){
   thead.innerHTML="";
-  HEAD.forEach(h=>thead.innerHTML+=`<th class="p-2 border-b border-slate-800">${h}</th>`);
+  HEAD.forEach(h=>thead.innerHTML+=`<th class="p-2 border-b border-slate-800 whitespace-nowrap">${h}</th>`);
   thead.innerHTML+=`<th class="p-2 border-b border-slate-800">AKSI</th>`;
 
   tbody.innerHTML="";
   ROWS.forEach(r=>{
     let tr="<tr class='border-b border-slate-800 hover:bg-slate-900'>";
-    r.forEach(c=>tr+=`<td class="p-2">${c||""}</td>`);
+    r.forEach(c=>tr+=`<td class="p-2 whitespace-nowrap">${c||""}</td>`);
     tr+=`<td class="p-2"><button onclick="openModal('${r[HEAD.indexOf("Submission ID")]}')" class="bg-cyan-600 px-2 py-1 rounded text-xs">Aksi</button></td></tr>`;
     tbody.innerHTML+=tr;
   });
@@ -105,4 +134,45 @@ async function simpan(){
 
   for(let f of foto.files){
     const b64=await toBase64(f);
-    files
+    files.push({file:b64.split(",")[1], mimeType:f.type});
+  }
+
+  const body={
+    action:"update",
+    key:key,
+    id:CURRENT_ID,
+    pemeriksa:pemeriksa.value,
+    hasilPeriksa:hasilPeriksa.value,
+    tglPeriksa:tglPeriksa.value,
+    teknisi:teknisi.value,
+    hasilPenanganan:hasilPenanganan.value,
+    tglPenanganan:tglPenanganan.value,
+    catatan:catatan.value,
+    status:"SELESAI",
+    files:files
+  };
+
+  const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
+  const j=await r.json();
+
+  if(j.success){ msg.textContent="✅ Berhasil"; load(); setTimeout(closeModal,800); }
+  else msg.textContent="❌ Gagal simpan";
+}
+
+function toBase64(f){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.readAsDataURL(f);
+  });
+}
+
+function logout(){
+  sessionStorage.clear();
+  location.href="login.html";
+}
+
+load();
+</script>
+</body>
+</html>

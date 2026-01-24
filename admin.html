@@ -102,7 +102,6 @@
 
 <textarea id="catatan" placeholder="Catatan" class="w-full p-2 rounded bg-slate-800 border border-slate-700"></textarea>
 
-<!-- MULTI FOTO -->
 <input id="foto" type="file" accept="image/*" multiple class="text-xs">
 
 <div class="flex gap-2 pt-2">
@@ -120,11 +119,9 @@ const key = sessionStorage.getItem("adminKey");
 if(!key) location.href="login.html";
 
 let HEAD=[], DATA=[], SID="";
-const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status"];
+const HIDE_COLS = ["JANJI TEMU","PERNYATAAN","Status"];
 
 load();
-
-/* ===== SEMUA FUNGSI LAMA TETAP ===== */
 
 async function load(){
   const r = await fetch(`${API}?action=all&key=${key}`);
@@ -162,6 +159,17 @@ function formatTanggal(val){
   return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
 }
 
+/* === FUNGSI KHUSUS FOTO === */
+function renderFotoCell(val){
+  if(!val) return "";
+  const links = String(val).split(/\n|,/).filter(x=>x.trim());
+  if(!links.length) return "";
+  if(links.length === 1){
+    return `<a href="${links[0]}" target="_blank" class="text-cyan-400 hover:underline">Lihat foto</a>`;
+  }
+  return links.map((l,i)=>`<a href="${l}" target="_blank" class="text-cyan-400 hover:underline block">Lihat foto ${i+1}</a>`).join("");
+}
+
 function getVisibleRows(){
   const q=search.value.toLowerCase();
   const f=filterStatus.value;
@@ -191,6 +199,9 @@ function renderTable(){
       if(c.h==="Submission Date" || c.h==="Tanggal Periksa" || c.h==="Tanggal Penanganan"){
         val = formatTanggal(val);
       }
+      if(c.h.toLowerCase().includes("foto")){
+        val = renderFotoCell(val);
+      }
       h+=`<td class="p-2 border border-slate-800 align-top">${val}</td>`;
     });
     h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td>`;
@@ -208,10 +219,9 @@ function badge(st){
   return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
 }
 
-/* ===== UPDATE: MULTI FOTO ===== */
+/* MULTI FOTO UPLOAD */
 async function simpan(){
   msg.textContent="Menyimpan...";
-
   let files=[];
   for(let f of foto.files){
     const b64=await toBase64(f);

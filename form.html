@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.google.com/recaptcha/api.js?render=ISI_SITE_KEY_ANDA"></script>
+<script src="https://www.google.com/recaptcha/api.js?render=6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu"></script>
 
 <style>
 body{
@@ -101,7 +101,7 @@ body{
   <div class="flex items-center gap-2 mb-2 text-emerald-400 font-semibold">
     📷 Upload Foto Dokumentasi
   </div>
-  <input id="foto" type="file" multiple accept="image/*" capture="environment" class="text-sm">
+  <input id="foto" type="file" multiple accept="image/*" ture="environment" class="text-sm">
 </div>
 
 <!-- PERNYATAAN -->
@@ -159,7 +159,7 @@ async function kirim(){
 
   msg.textContent="Mengirim aduan...";
 
-  const captcha = await grecaptcha.execute("ISI_SITE_KEY_ANDA",{action:"submit"});
+  const captcha = await grecaptcha.execute("6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu",{action:"submit"});
 
   let files=[];
   for(let f of foto.files){

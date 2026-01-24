@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Layanan Pengaduan</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.google.com/recaptcha/api.js?render=ISI_SITE_KEY_ANDA"></script>
+
+<style>
+body{
+  background: radial-gradient(circle at top, #0f172a, #020617);
+}
+.card{
+  backdrop-filter: blur(12px);
+  background: linear-gradient(145deg, rgba(30,41,59,.92), rgba(15,23,42,.92));
+}
+.input{
+  width:100%;
+  padding:14px;
+  font-size:16px;
+  background:#020617;
+  border:1px solid #334155;
+  border-radius:14px;
+}
+.blockbox{
+  border:1px solid #334155;
+  border-radius:18px;
+  padding:14px;
+  background:#020617;
+}
+</style>
+</head>
+
+<body class="text-white min-h-screen flex items-center justify-center p-3 md:p-6">
+
+<div class="w-full max-w-4xl card border border-slate-800 rounded-2xl shadow-2xl p-4 md:p-8 space-y-6">
+
+<!-- HEADER -->
+<div class="flex flex-col items-center text-center space-y-2">
+  <img src="LOGO UPTD PNG PUTIH.png" class="w-20 md:w-28 drop-shadow-lg">
+  <h1 class="text-xl md:text-3xl font-bold tracking-wide">Layanan Pengaduan</h1>
+  <p class="text-slate-400 text-xs md:text-sm">
+    terima kasih telah menghubungi layanan pengaduan
+  </p>
+</div>
+
+<!-- FORM -->
+<div class="space-y-4">
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+  <input id="nama" placeholder="Nama Lengkap" class="input">
+  <input id="hp" placeholder="Nomor HP / WhatsApp" class="input">
+
+  <input id="email" placeholder="Email Aktif" class="input">
+
+  <select id="rusun" class="input">
+    <option value="">Pilih Rusunawa</option>
+    <option>Rusunawa Ganda Maghfirah</option>
+    <option>Rusunawa Teluk Kelayan</option>
+  </select>
+
+  <input id="unit" placeholder="Nomor Unit / Sarusunawa" class="input md:col-span-2">
+
+  <textarea id="laporan" rows="3" placeholder="Tuliskan isi laporan aduan..."
+    class="input md:col-span-2"></textarea>
+</div>
+
+<!-- JANJI TEMU -->
+<div class="blockbox">
+  <div class="flex items-center gap-2 mb-3 text-cyan-400 font-semibold">
+    📅 Janji Temu (Hari kerja & jam layanan)
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div>
+      <div class="text-xs text-slate-400 mb-1">Pilih tanggal (Senin – Jumat)</div>
+      <input id="janjiTanggal" type="date" class="input">
+    </div>
+
+    <div>
+      <div class="text-xs text-slate-400 mb-1">Pilih jam layanan</div>
+      <select id="janjiJam" class="input">
+        <option value="">-- Pilih Jam --</option>
+        <option value="08.00-09.30">08.00 - 09.30</option>
+        <option value="09.30-12.00">09.30 - 12.00</option>
+        <option value="13.30-15.00">13.30 - 15.00</option>
+        <option value="15.00-16.30">15.00 - 16.30</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- field tersembunyi, tetap kirim ke API "janji" -->
+  <input type="hidden" id="janji">
+</div>
+
+<!-- UPLOAD FOTO -->
+<div class="blockbox border-dashed">
+  <div class="flex items-center gap-2 mb-2 text-emerald-400 font-semibold">
+    📷 Upload Foto Dokumentasi
+  </div>
+  <input id="foto" type="file" multiple accept="image/*" capture="environment" class="text-sm">
+</div>
+
+<!-- PERNYATAAN -->
+<label class="flex items-start gap-2 text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
+  <input type="checkbox" id="pernyataan" class="mt-1 scale-110">
+  <span>Saya menyatakan laporan ini benar dan dapat dipertanggungjawabkan</span>
+</label>
+
+<!-- BUTTON -->
+<button onclick="kirim()"
+  class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg shadow-lg active:scale-95 transition">
+  📩 Kirim Aduan
+</button>
+
+<div id="msg" class="text-center text-sm"></div>
+
+</div>
+</div>
+
+<script>
+const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
+const TRACKING="index.html";
+
+/* ====== VALIDASI HARI KERJA ====== */
+janjiTanggal.addEventListener("change",()=>{
+  const d = new Date(janjiTanggal.value);
+  const day = d.getDay(); // 0 Minggu, 6 Sabtu
+  if(day===0 || day===6){
+    alert("Janji temu hanya tersedia hari Senin sampai Jumat.");
+    janjiTanggal.value="";
+  }
+});
+
+/* ====== GABUNGKAN TANGGAL + JAM ====== */
+function buildJanji(){
+  if(janjiTanggal.value && janjiJam.value){
+    janji.value = janjiTanggal.value + " (" + janjiJam.value + ")";
+  } else {
+    janji.value = "";
+  }
+}
+
+janjiTanggal.addEventListener("change", buildJanji);
+janjiJam.addEventListener("change", buildJanji);
+
+function valid(){
+  return nama.value && hp.value && email.value && rusun.value && laporan.value && pernyataan.checked;
+}
+
+async function kirim(){
+  if(!valid()){
+    msg.textContent="❗ Semua kolom wajib diisi dan pernyataan dicentang";
+    return;
+  }
+
+  msg.textContent="Mengirim aduan...";
+
+  const captcha = await grecaptcha.execute("ISI_SITE_KEY_ANDA",{action:"submit"});
+
+  let files=[];
+  for(let f of foto.files){
+    const b=await toBase64(f);
+    files.push({file:b.split(",")[1], mimeType:f.type});
+  }
+
+  const body={
+    action:"create",
+    captcha:captcha,
+    nama:nama.value,
+    hp:hp.value,
+    email:email.value,
+    rusun:rusun.value,
+    unit:unit.value,
+    laporan:laporan.value,
+    janji:janji.value,
+    pernyataan:"YA",
+    files:files
+  };
+
+  const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
+  const j=await r.json();
+
+  if(j.success){
+    location.href = TRACKING + "?ticket=" + j.id;
+  } else {
+    msg.textContent="❌ Gagal mengirim aduan";
+  }
+}
+
+function toBase64(f){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.readAsDataURL(f);
+  });
+}
+</script>
+</body>
+</html>

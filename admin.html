@@ -3,78 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <title>Dashboard Admin Aduan</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-slate-950 text-white min-h-screen flex">
 
-<!-- SIDEBAR -->
-<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300">
-
-  <div class="p-4 border-b border-slate-800">
-    <div class="text-xl font-bold">Admin Panel</div>
-  </div>
-
-  <div class="flex-1 p-4 space-y-2 text-sm">
-    <button onclick="toggleSidebar()" class="w-full text-left hover:text-cyan-400">☰ Toggle</button>
-  </div>
-
+<div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
+  <div class="p-4 font-bold border-b border-slate-800">Dashboard Admin</div>
+  <div class="flex-1"></div>
   <div class="p-4 border-t border-slate-800">
-    <button onclick="logout()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded">
-      Logout
-    </button>
+    <button onclick="logout()" class="w-full bg-red-600 hover:bg-red-700 p-2 rounded">Logout</button>
   </div>
-
 </div>
 
-<!-- MAIN -->
 <div class="flex-1 p-6 overflow-x-auto">
-
 <h1 class="text-xl font-bold mb-4 text-center">Dashboard Admin Aduan</h1>
 
 <div class="overflow-auto border border-slate-800 rounded-lg">
-<table class="min-w-full text-xs text-left">
-<thead class="bg-slate-900 text-slate-300">
-<tr id="thead"></tr>
-</thead>
+<table class="min-w-full text-xs">
+<thead class="bg-slate-900"><tr id="thead"></tr></thead>
 <tbody id="tbody"></tbody>
 </table>
 </div>
-
 </div>
 
 <!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
-<div class="bg-slate-900 p-6 rounded-lg w-full max-w-lg border border-slate-700">
+<div class="bg-slate-900 p-5 rounded-lg w-full max-w-lg border border-slate-700">
 
-<h2 class="font-bold mb-3 text-lg">Update Aduan</h2>
+<h2 class="font-bold mb-2">Update Aduan</h2>
 <div id="sid" class="text-xs text-slate-400 mb-3"></div>
 
-<input id="pemeriksa" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Pemeriksa">
+<input id="pemeriksa" class="w-full mb-2 p-2 bg-slate-800 rounded border border-slate-700" placeholder="Pemeriksa">
+<input id="tglPeriksa" type="date" class="w-full mb-2 p-2 bg-slate-800 rounded border border-slate-700">
+<textarea id="hasilPeriksa" class="w-full mb-2 p-2 bg-slate-800 rounded border border-slate-700" placeholder="Hasil Periksa"></textarea>
 
-<input id="tglPeriksa" type="date" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700">
+<input id="teknisi" class="w-full mb-2 p-2 bg-slate-800 rounded border border-slate-700" placeholder="Teknisi">
+<input id="tglPenanganan" type="date" class="w-full mb-2 p-2 bg-slate-800 rounded border border-slate-700">
+<textarea id="hasilPenanganan" class="w-full mb-2 p-2 bg-slate-800 rounded border border-slate-700" placeholder="Hasil Penanganan"></textarea>
 
-<textarea id="hasilPeriksa" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Hasil Periksa"></textarea>
+<textarea id="catatan" class="w-full mb-2 p-2 bg-slate-800 rounded border border-slate-700" placeholder="Catatan"></textarea>
 
-<input id="teknisi" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Teknisi">
+<input id="foto" type="file" multiple accept="image/*" class="text-xs mb-3">
 
-<input id="tglPenanganan" type="date" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700">
-
-<textarea id="hasilPenanganan" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Hasil Penanganan"></textarea>
-
-<textarea id="catatan" class="w-full mb-2 p-2 rounded bg-slate-800 border border-slate-700" placeholder="Catatan"></textarea>
-
-<!-- MULTI FOTO -->
-<input id="foto" type="file" multiple accept="image/*" class="text-xs mb-2">
-
-<div id="msg" class="text-center text-sm mb-3"></div>
+<div id="msg" class="text-sm text-center mb-3"></div>
 
 <div class="flex gap-2">
-<button onclick="simpan()" class="flex-1 bg-blue-600 hover:bg-blue-700 py-2 rounded">Simpan</button>
-<button onclick="closeModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded">Batal</button>
+<button onclick="simpan()" class="flex-1 bg-blue-600 hover:bg-blue-700 p-2 rounded">Simpan</button>
+<button onclick="closeModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded">Batal</button>
 </div>
-
 </div>
 </div>
 
@@ -85,9 +63,6 @@ if(!key) location.href="login.html";
 
 const thead=document.getElementById("thead");
 const tbody=document.getElementById("tbody");
-const modal=document.getElementById("modal");
-const msg=document.getElementById("msg");
-
 let HEAD=[], ROWS=[], CURRENT_ID="";
 
 async function load(){
@@ -120,63 +95,14 @@ function openModal(id){
 
 function closeModal(){
   modal.classList.add("hidden");
-  msg.textContent="";
   foto.value="";
+  msg.textContent="";
 }
 
 async function simpan(){
   msg.textContent="Menyimpan...";
-
   let files=[];
-  if(foto.files.length){
-    for(let f of foto.files){
-      const b64=await toBase64(f);
-      files.push({file:b64.split(",")[1], mimeType:f.type});
-    }
-  }
 
-  const body={
-    action:"update",
-    key:key,
-    id:CURRENT_ID,
-    pemeriksa:pemeriksa.value,
-    hasilPeriksa:hasilPeriksa.value,
-    tglPeriksa:tglPeriksa.value,
-    teknisi:teknisi.value,
-    hasilPenanganan:hasilPenanganan.value,
-    tglPenanganan:tglPenanganan.value,
-    catatan:catatan.value,
-    status:"SELESAI",
-    files:files
-  };
-
-  const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
-  const j=await r.json();
-
-  if(j.success){ msg.textContent="✅ Berhasil"; load(); setTimeout(closeModal,800); }
-  else msg.textContent="❌ Gagal";
-}
-
-function toBase64(f){
-  return new Promise(res=>{
-    const r=new FileReader();
-    r.onload=()=>res(r.result);
-    r.readAsDataURL(f);
-  });
-}
-
-function toggleSidebar(){
-  sidebar.classList.toggle("w-64");
-  sidebar.classList.toggle("w-0");
-  sidebar.classList.toggle("overflow-hidden");
-}
-
-function logout(){
-  sessionStorage.clear();
-  location.href="login.html";
-}
-
-load();
-</script>
-</body>
-</html>
+  for(let f of foto.files){
+    const b64=await toBase64(f);
+    files

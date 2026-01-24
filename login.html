@@ -32,7 +32,7 @@ async function login(){
   const j=await r.json();
 
   if(j.success){
-    sessionStorage.setItem("key",p);
+    sessionStorage.setItem("adminKey", p); // ✅ DISAMAKAN DENGAN admin.html
     location.href="admin.html";
   } else {
     msg.textContent="❌ Username atau password salah";

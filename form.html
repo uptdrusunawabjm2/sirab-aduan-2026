@@ -74,29 +74,22 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
   <input id="foto" type="file" multiple accept="image/*" capture="environment" class="text-sm">
 </div>
 
-<!-- ================= PERNYATAAN ================= -->
+<!-- PERNYATAAN RINGKAS -->
+<div class="space-y-2 text-xs md:text-sm">
 
-<div class="space-y-3">
-
-<label class="flex gap-2 text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
+<label class="flex gap-2 bg-slate-900 border border-slate-700 rounded-xl p-3">
   <input type="checkbox" id="pernyataan1">
-  <span>
-Saya menyatakan bahwa laporan pengaduan ini dibuat dengan sadar dan penuh tanggung jawab,
-berdasarkan fakta yang benar. Saya bersedia menerima sanksi hukum atau proses hukum apabila
-di kemudian hari ditemukan bahwa laporan ini tidak benar, serta menyatakan bahwa tidak ada
-informasi yang sengaja disembunyikan atau dimanipulasi dalam laporan pengaduan ini.
-  </span>
+  <span>Saya menyatakan laporan pengaduan ini benar dan dapat dipertanggungjawabkan.</span>
 </label>
 
-<label class="flex gap-2 text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
+<label class="flex gap-2 bg-slate-900 border border-slate-700 rounded-xl p-3">
   <input type="checkbox" id="pernyataan2">
-  <span>
-Saya memahami dan menyetujui ketentuan khusus pemeliharaan sarana dan prasarana rusunawa.
-Apabila hasil pemeriksaan ditemukan adanya kelalaian penghuni, maka perbaikan dibebankan
-kepada penghuni. Kerusakan akibat penyusutan bangunan dengan tingkat kerusakan sedang atau
-berat akan diperbaiki sesuai ketersediaan anggaran Pemerintah Kota Banjarmasin.
-  </span>
+  <span>Saya memahami dan menyetujui ketentuan pemeliharaan sarana dan prasarana rusunawa.</span>
 </label>
+
+<button onclick="openModal()" class="text-cyan-400 underline text-left">
+📄 Baca pernyataan lengkap
+</button>
 
 </div>
 
@@ -109,10 +102,34 @@ berat akan diperbaiki sesuai ketersediaan anggaran Pemerintah Kota Banjarmasin.
 </div>
 </div>
 
+<!-- MODAL PERNYATAAN -->
+<div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+<div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-4 space-y-3 text-sm overflow-auto max-h-[85vh]">
+
+<h2 class="text-lg font-bold text-cyan-400">PERNYATAAN</h2>
+
+<p>1. Saya menyatakan laporan pengaduan ini dibuat dengan sadar dan penuh tanggung jawab berdasarkan fakta yang benar.</p>
+<p>2. Saya bersedia menerima sanksi hukum atau proses hukum apabila di kemudian hari ditemukan bahwa laporan ini tidak benar.</p>
+<p>3. Saya menyatakan tidak ada informasi yang sengaja disembunyikan atau dimanipulasi.</p>
+
+<hr class="border-slate-700">
+
+<p class="font-semibold">Ketentuan Khusus Pemeliharaan Sarana dan Prasarana Rusunawa:</p>
+<p>1. Apabila hasil pemeriksaan ditemukan adanya kelalaian penghuni, maka perbaikan dibebankan kepada penghuni.</p>
+<p>2. Kerusakan akibat penyusutan bangunan dengan tingkat kerusakan sedang atau berat akan diperbaiki sesuai ketersediaan anggaran Pemerintah Kota Banjarmasin.</p>
+
+<button onclick="closeModal()" class="w-full bg-blue-600 mt-3 py-2 rounded-xl font-semibold">
+Tutup
+</button>
+
+</div>
+</div>
+
 <script>
 const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const TRACKING="index.html";
 
+/* DATE */
 flatpickr("#janjiTanggal", {
   dateFormat: "m/d/Y",
   minDate: "today",
@@ -131,18 +148,19 @@ function valid(){
          && pernyataan1.checked && pernyataan2.checked;
 }
 
-/* ===== KOMPRES FOTO ===== */
+/* MODAL */
+function openModal(){ modal.classList.remove("hidden"); modal.classList.add("flex"); }
+function closeModal(){ modal.classList.add("hidden"); modal.classList.remove("flex"); }
 
+/* KOMPRES FOTO */
 async function compressImage(file, maxSize=1280, quality=0.7){
   return new Promise(res=>{
-    const img=new Image();
-    const r=new FileReader();
+    const img=new Image(), r=new FileReader();
     r.onload=e=>{
       img.onload=()=>{
         let w=img.width, h=img.height;
         if(w>h && w>maxSize){ h*=maxSize/w; w=maxSize; }
         else if(h>maxSize){ w*=maxSize/h; h=maxSize; }
-
         const c=document.createElement("canvas");
         c.width=w; c.height=h;
         c.getContext("2d").drawImage(img,0,0,w,h);
@@ -168,4 +186,22 @@ async function kirim(){
     let files=[];
     for(let f of foto.files){
       const compressed = await compressImage(f);
-      files.push({file:compressed.split(",")[1], mimeTyp
+      files.push({file:compressed.split(",")[1], mimeType:"image/jpeg"});
+    }
+
+    msg.textContent="Mengirim aduan...";
+
+    const body={action:"create",captcha,nama:nama.value,hp:hp.value,email:email.value,
+                rusun:rusun.value,unit:unit.value,laporan:laporan.value,
+                janji:janji.value,pernyataan:"YA",files};
+
+    const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
+    const j=await r.json();
+
+    if(j.success) location.href = TRACKING + "?ticket=" + j.id;
+    else msg.textContent="❌ " + (j.error || "Gagal mengirim aduan");
+  });
+}
+</script>
+</body>
+</html>

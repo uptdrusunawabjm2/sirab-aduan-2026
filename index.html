@@ -112,15 +112,15 @@ function renderUI(header,row){
 
   <hr class="border-slate-700 my-3">
 
-  ${block("PEMERIKSA",map["Pemeriksa"])}
-  ${block("TANGGAL PERIKSA",fmt(map["Tanggal Periksa"]))}
-  ${block("HASIL PERIKSA",map["Hasil Periksa"])}
+  ${block("Pemeriksa",map["Pemeriksa"])}
+  ${block("Tanggal Periksa",fmt(map["Tanggal Periksa"]))}
+  ${block("Hasil Periksa",map["Hasil Periksa"])}
 
   <hr class="border-slate-700 my-3">
 
-  ${block("TEKNISI",map["Teknisi"])}
-  ${block("TANGGAL PENANGANAN",fmt(map["Tanggal Penanganan"]))}
-  ${block("HASIL PENANGANAN",map["Hasil Penanganan"])}
+  ${block("Teknisi",map["Teknisi"])}
+  ${block("Tanggal Penanganan",fmt(map["Tanggal Penanganan"]))}
+  ${block("Hasil Penanganan",map["Hasil Penanganan"])}
 
   ${linkFoto("FOTO PENANGANAN", map["Foto"])}
 
@@ -149,12 +149,15 @@ function fmt(v){
   return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
 }
 
-/* ===== DOWNLOAD LAPORAN (TANPA STATUS & CATATAN) ===== */
+/* ===== DOWNLOAD LAPORAN (TANPA STATUS, CATATAN, FOTO) ===== */
 function downloadLaporan(){
   let t="LAPORAN ADUAN RUSUNAWA\n\n";
   for(let k in _data){
-    if(k.toLowerCase()=="status") continue;
-    if(k.toLowerCase()=="catatan") continue;
+    const key = k.toLowerCase();
+    if(key=="status") continue;
+    if(key=="catatan") continue;
+    if(key=="foto") continue;
+    if(key=="foto dokumentasi") continue;
     t+=k+" : "+_data[k]+"\n";
   }
   const b=new Blob([t],{type:"text/plain"});

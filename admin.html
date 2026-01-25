@@ -9,6 +9,7 @@
 
 <body class="bg-slate-950 text-white min-h-screen flex">
 
+<!-- SIDEBAR -->
 <div id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300">
 
   <div class="p-4 border-b border-slate-800">
@@ -28,6 +29,7 @@
 
 </div>
 
+<!-- MAIN -->
 <div class="flex-1 flex flex-col">
 
 <div class="bg-slate-900 border-b border-slate-800 p-3 flex items-center gap-3">
@@ -37,6 +39,7 @@
 
 <div class="p-4 space-y-4">
 
+<!-- REKAP -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
     <div class="text-slate-400 text-sm">Total Aduan</div>
@@ -56,6 +59,7 @@
   </div>
 </div>
 
+<!-- FILTER -->
 <div class="grid md:grid-cols-5 gap-2">
   <input id="search" oninput="renderTable()" placeholder="🔍 Cari aduan..."
     class="p-2 rounded bg-slate-800 border border-slate-700">
@@ -79,6 +83,7 @@
   </button>
 </div>
 
+<!-- TABLE -->
 <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[65vh]">
   <table class="w-full text-sm" id="table"></table>
 </div>
@@ -86,7 +91,7 @@
 </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL (TIDAK DIUBAH) -->
 <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
 
@@ -115,44 +120,83 @@
 </div>
 
 <script>
-/* ======================= KONFIG ======================= */
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const key = sessionStorage.getItem("adminKey");
 if(!key) location.href="login.html";
 
 let HEAD=[], DATA=[], RAW=[], SID="";
-const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status","EMAIL"];
+const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status"];
 
 load();
 
-/* ======================= LOAD ======================= */
 async function load(){
   const r = await fetch(`${API}?action=all&key=${key}`);
   const j = await r.json();
-  HEAD=j.header; RAW=j.data;
-
-  const idx = HEAD.indexOf("Submission Date");
-  RAW.sort((a,b)=> new Date(b[idx]) - new Date(a[idx]));
-
-  DATA=[...RAW];
+  HEAD=j.header; RAW=j.data; DATA=[...RAW];
   buildYear();
   hitungRekap();
   renderTable();
 }
 
-/* ======================= TABLE ======================= */
+/* ===== FORMAT FOTO ===== */
+function renderFotoCell(val){
+  if(!val) return "";
+  const links = String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
+  if(links.length===1) return `<a href="${links[0]}" target="_blank" class="text-cyan-400 hover:underline">Lihat foto</a>`;
+  return links.map((l,i)=>`<a href="${l}" target="_blank" class="text-cyan-400 hover:underline block">Lihat foto ${i+1}</a>`).join("");
+}
+
+/* ===== FILTER TAHUN ===== */
+function buildYear(){
+  const idx = HEAD.indexOf("Submission Date");
+  let years=[...new Set(RAW.map(r=>{const d=new Date(r[idx]);return isNaN(d)?null:d.getFullYear();}).filter(Boolean))].sort((a,b)=>b-a);
+  filterTahun.innerHTML='<option value="">Semua Tahun</option>';
+  years.forEach(y=>filterTahun.innerHTML+=`<option value="${y}">${y}</option>`);
+}
+
+function applyYear(){
+  const y=filterTahun.value;
+  if(!y) DATA=[...RAW];
+  else{
+    const idx=HEAD.indexOf("Submission Date");
+    DATA=RAW.filter(r=>{const d=new Date(r[idx]);return !isNaN(d)&&d.getFullYear()==y});
+  }
+  hitungRekap();
+  renderTable();
+}
+
+/* ===== STATUS & REKAP ===== */
+function getStatus(row){
+  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
+  if(m["Teknisi"]&&m["Tanggal Penanganan"]&&m["Hasil Penanganan"]) return "SELESAI";
+  if(m["Pemeriksa"]&&m["Tanggal Periksa"]&&m["Hasil Periksa"]) return "DIPERIKSA";
+  return "PENDING";
+}
+
+function hitungRekap(){
+  let p=0,d=0,s=0;
+  DATA.forEach(r=>{
+    const st=getStatus(r);
+    if(st==="PENDING") p++;
+    else if(st==="DIPERIKSA") d++;
+    else if(st==="SELESAI") s++;
+  });
+  rTotal.textContent=DATA.length;
+  rPending.textContent=p;
+  rPeriksa.textContent=d;
+  rSelesai.textContent=s;
+}
+
+/* ===== TABEL (HEADER DISERAGAMKAN) ===== */
 function renderTable(){
   const rows = getVisibleRows();
   let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
 
-  cols.sort((a,b)=>{
-    if(a.h==="Submission ID") return -1;
-    if(b.h==="Submission ID") return 1;
-    return 0;
-  });
-
   let h="<tr class='bg-slate-800 sticky top-0'>";
-  cols.forEach(c=>h+=`<th class="p-2 border border-slate-700 text-left">${c.h.toUpperCase()}</th>`);
+  cols.forEach(c=>{
+    let display = String(c.h).toUpperCase();
+    h+=`<th class="p-2 border border-slate-700 text-left">${display}</th>`;
+  });
   h+="<th class='p-2 border border-slate-700 text-center'>STATUS</th>";
   h+="<th class='p-2 border border-slate-700 text-center'>AKSI</th></tr>";
 
@@ -160,36 +204,49 @@ function renderTable(){
     const st=getStatus(r);
     h+="<tr class='hover:bg-slate-800'>";
     cols.forEach(c=>{
-      let val=r[c.i]||"";
-      if(c.h==="Submission Date"||c.h==="Tanggal Periksa"||c.h==="Tanggal Penanganan") val=formatTanggal(val);
-      if(c.h.toLowerCase().includes("foto")) val=renderFotoCell(val);
+      let val = r[c.i] || "";
+      if(c.h==="Submission Date" || c.h==="Tanggal Periksa" || c.h==="Tanggal Penanganan"){
+        val = formatTanggal(val);
+      }
+      if(c.h.toLowerCase().includes("foto")){
+        val = renderFotoCell(val);
+      }
       h+=`<td class="p-2 border border-slate-800 align-top">${val}</td>`;
     });
     h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td>`;
     h+=`<td class="p-2 border border-slate-800 text-center">
-    <button onclick='openModal(${JSON.stringify(r)})' class="bg-blue-600 px-3 py-1 rounded text-xs">Aksi</button></td></tr>`;
+      <button onclick='openModal(${JSON.stringify(r)})'
+      class="bg-blue-600 px-3 py-1 rounded text-xs">Aksi</button></td></tr>`;
   });
 
   table.innerHTML=h;
 }
 
-/* ======================= AKSI (DIPULIHKAN) ======================= */
+function getVisibleRows(){
+  const q=search.value.toLowerCase();
+  const f=filterStatus.value;
+  return DATA.filter(r=>{
+    const txt=r.join(" ").toLowerCase();
+    const st=getStatus(r);
+    if(q && !txt.includes(q)) return false;
+    if(f && st!==f) return false;
+    return true;
+  });
+}
 
-function openModal(row){
-  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
-  SID=m["Submission ID"];
-  mid.textContent="Submission ID: "+SID;
+function formatTanggal(val){
+  if(!val) return "";
+  const d=new Date(val);
+  if(isNaN(d)) return val;
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+}
 
-  pemeriksa.value=m["Pemeriksa"]||"";
-  hasilPeriksa.value=m["Hasil Periksa"]||"";
-  teknisi.value=m["Teknisi"]||"";
-  hasilPenanganan.value=m["Hasil Penanganan"]||"";
-  catatan.value=m["Catatan"]||"";
-  tglPeriksa.value=toInputDate(m["Tanggal Periksa"]);
-  tglPenanganan.value=toInputDate(m["Tanggal Penanganan"]);
+/* ===== FUNGSI ASLI ===== */
 
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+function badge(st){
+  if(st==="SELESAI") return `<span class="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs">SELESAI</span>`;
+  if(st==="DIPERIKSA") return `<span class="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-xs">DIPERIKSA</span>`;
+  return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
 }
 
 async function simpan(){
@@ -215,11 +272,31 @@ async function simpan(){
   const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
   const j=await r.json();
 
-  if(j.success){
-    msg.textContent="✅ Berhasil";
-    load();
-    setTimeout(closeModal,800);
-  } else msg.textContent="❌ Gagal";
+  if(j.success){ msg.textContent="✅ Berhasil"; load(); setTimeout(closeModal,800); }
+  else msg.textContent="❌ Gagal";
+}
+
+function openModal(row){
+  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
+  SID=m["Submission ID"];
+  mid.textContent="Submission ID: "+SID;
+
+  pemeriksa.value=m["Pemeriksa"]||"";
+  hasilPeriksa.value=m["Hasil Periksa"]||"";
+  teknisi.value=m["Teknisi"]||"";
+  hasilPenanganan.value=m["Hasil Penanganan"]||"";
+  catatan.value=m["Catatan"]||"";
+  tglPeriksa.value=toInputDate(m["Tanggal Periksa"]);
+  tglPenanganan.value=toInputDate(m["Tanggal Penanganan"]);
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function toInputDate(v){
+  if(!v) return "";
+  const d=new Date(v); if(isNaN(d)) return "";
+  return d.toISOString().split("T")[0];
 }
 
 function closeModal(){
@@ -229,97 +306,15 @@ function closeModal(){
   msg.textContent="";
 }
 
-/* ======================= UTIL ======================= */
-function toInputDate(v){
-  if(!v) return "";
-  const d=new Date(v); if(isNaN(d)) return "";
-  return d.toISOString().split("T")[0];
-}
-
-function toBase64(f){
+function toBase64(f){ 
   return new Promise(res=>{
-    const r=new FileReader();
-    r.onload=()=>res(r.result);
+    const r=new FileReader(); 
+    r.onload=()=>res(r.result); 
     r.readAsDataURL(f);
   });
 }
 
-function renderFotoCell(val){
-  if(!val) return "";
-  const links=String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
-  if(links.length===1) return `<a href="${links[0]}" target="_blank" class="text-cyan-400 hover:underline">Lihat foto</a>`;
-  return links.map((l,i)=>`<a href="${l}" target="_blank" class="text-cyan-400 hover:underline block">Lihat foto ${i+1}</a>`).join("");
-}
-
-function buildYear(){
-  const idx=HEAD.indexOf("Submission Date");
-  let years=[...new Set(RAW.map(r=>{const d=new Date(r[idx]);return isNaN(d)?null:d.getFullYear();}).filter(Boolean))].sort((a,b)=>b-a);
-  filterTahun.innerHTML='<option value="">Semua Tahun</option>';
-  years.forEach(y=>filterTahun.innerHTML+=`<option value="${y}">${y}</option>`);
-}
-
-function applyYear(){
-  const y=filterTahun.value;
-  if(!y) DATA=[...RAW];
-  else{
-    const idx=HEAD.indexOf("Submission Date");
-    DATA=RAW.filter(r=>{const d=new Date(r[idx]);return !isNaN(d)&&d.getFullYear()==y});
-  }
-  hitungRekap();
-  renderTable();
-}
-
-function getStatus(row){
-  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
-  if(m["Teknisi"]&&m["Tanggal Penanganan"]&&m["Hasil Penanganan"]) return "SELESAI";
-  if(m["Pemeriksa"]&&m["Tanggal Periksa"]&&m["Hasil Periksa"]) return "DIPERIKSA";
-  return "PENDING";
-}
-
-function hitungRekap(){
-  let p=0,d=0,s=0;
-  DATA.forEach(r=>{
-    const st=getStatus(r);
-    if(st==="PENDING") p++;
-    else if(st==="DIPERIKSA") d++;
-    else if(st==="SELESAI") s++;
-  });
-  rTotal.textContent=DATA.length;
-  rPending.textContent=p;
-  rPeriksa.textContent=d;
-  rSelesai.textContent=s;
-}
-
-function getVisibleRows(){
-  const q=search.value.toLowerCase();
-  const f=filterStatus.value;
-  return DATA.filter(r=>{
-    const txt=r.join(" ").toLowerCase();
-    const st=getStatus(r);
-    if(q && !txt.includes(q)) return false;
-    if(f && st!==f) return false;
-    return true;
-  });
-}
-
-function formatTanggal(val){
-  if(!val) return "";
-  const d=new Date(val);
-  if(isNaN(d)) return val;
-  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
-}
-
-function badge(st){
-  if(st==="SELESAI") return `<span class="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs">SELESAI</span>`;
-  if(st==="DIPERIKSA") return `<span class="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-xs">DIPERIKSA</span>`;
-  return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
-}
-
-function toggleSidebar(){
-  sidebar.classList.toggle("w-64");
-  sidebar.classList.toggle("w-0");
-  sidebar.classList.toggle("overflow-hidden");
-}
+function toggleSidebar(){ sidebar.classList.toggle("w-64"); sidebar.classList.toggle("w-0"); sidebar.classList.toggle("overflow-hidden");}
 function logout(){ sessionStorage.clear(); location.href="login.html"; }
 </script>
 </body>

@@ -18,7 +18,6 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 .input{width:100%;padding:14px;font-size:16px;background:#020617;border:1px solid #334155;border-radius:14px;color:white;}
 .blockbox{border:1px solid #334155;border-radius:18px;padding:14px;background:#020617;}
 
-/* FLATPICKR CERAH */
 .flatpickr-calendar{background:#f8fafc;color:#0f172a;border:1px solid #cbd5e1;border-radius:14px;}
 .flatpickr-months, .flatpickr-weekdays{background:#e2e8f0;color:#0f172a;}
 .flatpickr-day{color:#0f172a;border-radius:8px;}
@@ -73,16 +72,33 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 <div class="blockbox border-dashed">
   <div class="text-emerald-400 font-semibold mb-2">📷 Upload Foto Dokumentasi</div>
   <input id="foto" type="file" multiple accept="image/*" capture="environment" class="text-sm">
-  <div id="infoFoto" class="text-xs text-slate-400 mt-1"></div>
 </div>
 
+<!-- ================= PERNYATAAN ================= -->
+
+<div class="space-y-3">
+
 <label class="flex gap-2 text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
-  <input type="checkbox" id="pernyataan">
-  <span>Saya menyatakan bahwa laporan pengaduan ini dibuat dengan sadar dan penuh tanggung jawab, 
-    berdasarkan fakta yang benar. Saya bersedia menerima sanksi hukum atau proses hukum 
-    apabila di kemudian hari ditemukan bahwa laporan ini tidak benar, serta menyatakan bahwa 
-    tidak ada informasi yang sengaja disembunyikan atau dimanipulasi dalam laporan pengaduan ini.</span>
+  <input type="checkbox" id="pernyataan1">
+  <span>
+Saya menyatakan bahwa laporan pengaduan ini dibuat dengan sadar dan penuh tanggung jawab,
+berdasarkan fakta yang benar. Saya bersedia menerima sanksi hukum atau proses hukum apabila
+di kemudian hari ditemukan bahwa laporan ini tidak benar, serta menyatakan bahwa tidak ada
+informasi yang sengaja disembunyikan atau dimanipulasi dalam laporan pengaduan ini.
+  </span>
 </label>
+
+<label class="flex gap-2 text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
+  <input type="checkbox" id="pernyataan2">
+  <span>
+Saya memahami dan menyetujui ketentuan khusus pemeliharaan sarana dan prasarana rusunawa.
+Apabila hasil pemeriksaan ditemukan adanya kelalaian penghuni, maka perbaikan dibebankan
+kepada penghuni. Kerusakan akibat penyusutan bangunan dengan tingkat kerusakan sedang atau
+berat akan diperbaiki sesuai ketersediaan anggaran Pemerintah Kota Banjarmasin.
+  </span>
+</label>
+
+</div>
 
 <button onclick="kirim()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 py-3 rounded-xl font-bold">
 📩 Kirim Aduan
@@ -97,7 +113,6 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const TRACKING="index.html";
 
-/* FLATPICKR */
 flatpickr("#janjiTanggal", {
   dateFormat: "m/d/Y",
   minDate: "today",
@@ -112,10 +127,11 @@ function buildJanji(){
 }
 
 function valid(){
-  return nama.value && hp.value && email.value && rusun.value && laporan.value && pernyataan.checked;
+  return nama.value && hp.value && email.value && rusun.value && laporan.value
+         && pernyataan1.checked && pernyataan2.checked;
 }
 
-/* ================= KOMPRES FOTO ================= */
+/* ===== KOMPRES FOTO ===== */
 
 async function compressImage(file, maxSize=1280, quality=0.7){
   return new Promise(res=>{
@@ -130,7 +146,6 @@ async function compressImage(file, maxSize=1280, quality=0.7){
         const c=document.createElement("canvas");
         c.width=w; c.height=h;
         c.getContext("2d").drawImage(img,0,0,w,h);
-
         res(c.toDataURL("image/jpeg",quality));
       };
       img.src=e.target.result;
@@ -139,11 +154,9 @@ async function compressImage(file, maxSize=1280, quality=0.7){
   });
 }
 
-/* ================= KIRIM ================= */
-
 async function kirim(){
   if(!valid()){
-    msg.textContent="❗ Semua kolom wajib diisi dan pernyataan dicentang";
+    msg.textContent="❗ Semua kolom wajib diisi dan kedua pernyataan harus dicentang";
     return;
   }
 
@@ -153,30 +166,6 @@ async function kirim(){
     const captcha = await grecaptcha.execute("6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu",{action:"submit"});
 
     let files=[];
-    let totalBefore=0, totalAfter=0;
-
     for(let f of foto.files){
-      totalBefore += f.size;
       const compressed = await compressImage(f);
-      totalAfter += Math.round((compressed.length*3)/4);
-      files.push({file:compressed.split(",")[1], mimeType:"image/jpeg"});
-    }
-
-    infoFoto.textContent = foto.files.length
-      ? `📉 Kompres: ${(totalBefore/1024/1024).toFixed(2)} MB → ${(totalAfter/1024/1024).toFixed(2)} MB`
-      : "";
-
-    msg.textContent="Mengirim aduan...";
-
-    const body={action:"create",captcha,nama:nama.value,hp:hp.value,email:email.value,rusun:rusun.value,unit:unit.value,laporan:laporan.value,janji:janji.value,pernyataan:"YA",files};
-
-    const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
-    const j=await r.json();
-
-    if(j.success) location.href = TRACKING + "?ticket=" + j.id;
-    else msg.textContent="❌ " + (j.error || "Gagal mengirim aduan");
-  });
-}
-</script>
-</body>
-</html>
+      files.push({file:compressed.split(",")[1], mimeTyp

@@ -86,6 +86,7 @@
 </div>
 </div>
 
+<!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
 
@@ -114,6 +115,7 @@
 </div>
 
 <script>
+/* ======================= KONFIG ======================= */
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const key = sessionStorage.getItem("adminKey");
 if(!key) location.href="login.html";
@@ -123,17 +125,14 @@ const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status","EMAIL"
 
 load();
 
+/* ======================= LOAD ======================= */
 async function load(){
   const r = await fetch(`${API}?action=all&key=${key}`);
   const j = await r.json();
   HEAD=j.header; RAW=j.data;
 
-  /* ✅ SORT BY SUBMISSION DATE TERBARU */
   const idx = HEAD.indexOf("Submission Date");
-  RAW.sort((a,b)=>{
-    const da=new Date(a[idx]), db=new Date(b[idx]);
-    return (db - da);
-  });
+  RAW.sort((a,b)=> new Date(b[idx]) - new Date(a[idx]));
 
   DATA=[...RAW];
   buildYear();
@@ -141,12 +140,11 @@ async function load(){
   renderTable();
 }
 
+/* ======================= TABLE ======================= */
 function renderTable(){
   const rows = getVisibleRows();
-
   let cols = HEAD.map((h,i)=>({h,i})).filter(x=>!HIDE_COLS.includes(x.h));
 
-  /* ✅ PIN SUBMISSION ID KE PALING KIRI */
   cols.sort((a,b)=>{
     if(a.h==="Submission ID") return -1;
     if(b.h==="Submission ID") return 1;
@@ -175,17 +173,86 @@ function renderTable(){
   table.innerHTML=h;
 }
 
-/* ===== fungsi lama tidak diubah ===== */
+/* ======================= AKSI (DIPULIHKAN) ======================= */
+
+function openModal(row){
+  const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
+  SID=m["Submission ID"];
+  mid.textContent="Submission ID: "+SID;
+
+  pemeriksa.value=m["Pemeriksa"]||"";
+  hasilPeriksa.value=m["Hasil Periksa"]||"";
+  teknisi.value=m["Teknisi"]||"";
+  hasilPenanganan.value=m["Hasil Penanganan"]||"";
+  catatan.value=m["Catatan"]||"";
+  tglPeriksa.value=toInputDate(m["Tanggal Periksa"]);
+  tglPenanganan.value=toInputDate(m["Tanggal Penanganan"]);
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+async function simpan(){
+  msg.textContent="Menyimpan...";
+  let files=[];
+  for(let f of foto.files){
+    const b64=await toBase64(f);
+    files.push({file:b64.split(",")[1], mimeType:f.type});
+  }
+
+  const body={
+    action:"update", key, id:SID,
+    pemeriksa:pemeriksa.value,
+    hasilPeriksa:hasilPeriksa.value,
+    tglPeriksa:tglPeriksa.value,
+    teknisi:teknisi.value,
+    hasilPenanganan:hasilPenanganan.value,
+    tglPenanganan:tglPenanganan.value,
+    catatan:catatan.value,
+    files:files
+  };
+
+  const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
+  const j=await r.json();
+
+  if(j.success){
+    msg.textContent="✅ Berhasil";
+    load();
+    setTimeout(closeModal,800);
+  } else msg.textContent="❌ Gagal";
+}
+
+function closeModal(){
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  foto.value="";
+  msg.textContent="";
+}
+
+/* ======================= UTIL ======================= */
+function toInputDate(v){
+  if(!v) return "";
+  const d=new Date(v); if(isNaN(d)) return "";
+  return d.toISOString().split("T")[0];
+}
+
+function toBase64(f){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.readAsDataURL(f);
+  });
+}
 
 function renderFotoCell(val){
   if(!val) return "";
-  const links = String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
+  const links=String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
   if(links.length===1) return `<a href="${links[0]}" target="_blank" class="text-cyan-400 hover:underline">Lihat foto</a>`;
   return links.map((l,i)=>`<a href="${l}" target="_blank" class="text-cyan-400 hover:underline block">Lihat foto ${i+1}</a>`).join("");
 }
 
 function buildYear(){
-  const idx = HEAD.indexOf("Submission Date");
+  const idx=HEAD.indexOf("Submission Date");
   let years=[...new Set(RAW.map(r=>{const d=new Date(r[idx]);return isNaN(d)?null:d.getFullYear();}).filter(Boolean))].sort((a,b)=>b-a);
   filterTahun.innerHTML='<option value="">Semua Tahun</option>';
   years.forEach(y=>filterTahun.innerHTML+=`<option value="${y}">${y}</option>`);
@@ -248,10 +315,11 @@ function badge(st){
   return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
 }
 
-function simpan(){/* TIDAK DIUBAH */}
-function openModal(r){/* TIDAK DIUBAH */}
-function closeModal(){/* TIDAK DIUBAH */}
-function toggleSidebar(){ sidebar.classList.toggle("w-64"); sidebar.classList.toggle("w-0"); sidebar.classList.toggle("overflow-hidden");}
+function toggleSidebar(){
+  sidebar.classList.toggle("w-64");
+  sidebar.classList.toggle("w-0");
+  sidebar.classList.toggle("overflow-hidden");
+}
 function logout(){ sessionStorage.clear(); location.href="login.html"; }
 </script>
 </body>

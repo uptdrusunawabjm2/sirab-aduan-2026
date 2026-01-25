@@ -8,12 +8,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-body{min-height:100svh}
-.step{display:flex;align-items:center;gap:8px;font-weight:600}
-.step span{width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center}
-.step.done span{background:#16a34a}
-.step.active span{background:#2563eb}
-.step.wait span{background:#64748b}
+body { min-height:100svh; }
 </style>
 </head>
 
@@ -30,13 +25,13 @@ body{min-height:100svh}
   <button onclick="cek()" class="bg-blue-600 px-5 rounded-xl font-semibold hover:bg-blue-700 transition">Cek</button>
 </div>
 
-<div id="msg" class="text-center text-red-400 text-sm mb-3"></div>
-
 <!-- STATUS -->
-<div id="statusBox" class="hidden bg-slate-800 rounded-xl p-4 space-y-3 mb-4"></div>
+<div id="statusBox" class="hidden mb-4 p-3 rounded-xl text-center font-bold text-lg"></div>
 
 <!-- HASIL -->
-<div id="hasil" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+<div id="hasil" class="hidden grid grid-cols-1 gap-4"></div>
+
+<div id="msg" class="text-center text-red-400 text-sm mt-3"></div>
 
 </div>
 
@@ -44,125 +39,117 @@ body{min-height:100svh}
 const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 
 window.addEventListener("load",()=>{
-const p=new URLSearchParams(location.search);
-const t=p.get("ticket");
-if(t){ticket.value=t;cek();}
+  const p=new URLSearchParams(location.search);
+  const t=p.get("ticket");
+  if(t){ticket.value=t;cek();}
 });
 
 function cleanID(v){
-return v.replace(/[^a-zA-Z0-9\-]/g,"").substring(0,40);
+  return v.replace(/[^a-zA-Z0-9\-]/g,"").substring(0,40);
 }
 
 async function cek(){
-let id=cleanID(ticket.value.trim());
-ticket.value=id;
-hasil.classList.add("hidden");
-statusBox.classList.add("hidden");
-msg.textContent="Memuat data...";
+  let id=cleanID(ticket.value.trim());
+  ticket.value=id;
+  hasil.classList.add("hidden");
+  statusBox.classList.add("hidden");
+  msg.textContent="Memuat data...";
 
-if(!id){msg.textContent="Submission ID wajib diisi.";return;}
+  if(!id){msg.textContent="Submission ID wajib diisi.";return;}
 
-try{
-const r=await fetch(`${API}?action=track&id=${encodeURIComponent(id)}`);
-const j=await r.json();
-if(!j.found){msg.textContent="Data tidak ditemukan.";return;}
-msg.textContent="";
-renderStatus(j.header,j.data);
-renderUI(j.header,j.data);
-hasil.classList.remove("hidden");
-}catch{msg.textContent="Gagal menghubungi server.";}
+  try{
+    const r=await fetch(`${API}?action=track&id=${encodeURIComponent(id)}`);
+    const j=await r.json();
+    if(!j.found){msg.textContent="Data tidak ditemukan.";return;}
+    msg.textContent="";
+    renderStatus(j.header,j.data);
+    renderUI(j.header,j.data);
+    hasil.classList.remove("hidden");
+  }catch{
+    msg.textContent="Gagal menghubungi server.";
+  }
 }
 
+/* ===== STATUS TEKS ===== */
 function renderStatus(header,row){
-const map={};header.forEach((h,i)=>map[h]=row[i]);
+  const map={}; header.forEach((h,i)=>map[h]=row[i]);
 
-const diperiksa = map["Pemeriksa"] && map["Tanggal Periksa"] && map["Hasil Periksa"];
-const selesai = map["Teknisi"] && map["Tanggal Penanganan"] && map["Hasil Penanganan"];
+  const diperiksa = map["Pemeriksa"] && map["Tanggal Periksa"] && map["Hasil Periksa"];
+  const selesai = map["Teknisi"] && map["Tanggal Penanganan"] && map["Hasil Penanganan"];
 
-let persen=33, status="PENDING";
-if(diperiksa){persen=66; status="DIPERIKSA";}
-if(selesai){persen=100; status="SELESAI";}
+  statusBox.className="mb-4 p-3 rounded-xl text-center font-bold text-lg";
 
-const bar = persen==100 ? "■■■■■■■■■■" : persen==66 ? "■■■■■■□□□□" : "■■■□□□□□□□";
-
-statusBox.innerHTML=`
-<div class="text-center text-lg font-bold text-cyan-400">STATUS : ${status}</div>
-<div class="text-center font-mono tracking-widest">[${bar}] ${persen}%</div>
-
-<div class="flex justify-between text-sm mt-3">
-  <div class="step ${persen>=33?'done':'wait'}"><span>1</span>Pending</div>
-  <div class="step ${persen>=66?'active':'wait'}"><span>2</span>Diperiksa</div>
-  <div class="step ${persen==100?'done':'wait'}"><span>3</span>Selesai</div>
-</div>
-`;
-statusBox.classList.remove("hidden");
+  if(selesai){
+    statusBox.textContent="STATUS : SELESAI";
+    statusBox.classList.add("bg-green-600");
+  }else if(diperiksa){
+    statusBox.textContent="STATUS : DIPERIKSA";
+    statusBox.classList.add("bg-blue-600");
+  }else{
+    statusBox.textContent="STATUS : PENDING";
+    statusBox.classList.add("bg-yellow-400","text-black");
+  }
+  statusBox.classList.remove("hidden");
 }
 
+/* ===== UI ===== */
 function renderUI(header,row){
-const map={};header.forEach((h,i)=>map[h]=row[i]);
-const id=map["Submission ID"];
+  const map={}; header.forEach((h,i)=>map[h]=row[i]);
 
-hasil.innerHTML=`
-<div class="md:col-span-2 bg-slate-800 rounded-xl p-4 space-y-2">
-<b class="text-blue-400">Submission ID:</b><div class="font-mono break-all">${id}</div>
+  hasil.innerHTML=`
+  <div class="bg-slate-800 rounded-xl p-4 space-y-2">
 
-${block("RUSUNAWA",map["RUSUNAWA"])}
-${block("NOMOR UNIT/SARUSUNAWA",map["NOMOR UNIT/SARUSUNAWA"])}
-${block("NAMA LENGKAP",map["NAMA LENGKAP"])}
-${block("NOMOR HP/WA",map["NOMOR HP/WA"])}
-${block("ISI LAPORAN",map["ISI LAPORAN"])}
+  <div><b class="text-blue-400">Submission ID:</b><br>${map["Submission ID"]||""}</div>
 
-${gallery("FOTO DOKUMENTASI",map["FOTO DOKUMENTASI"])}
+  ${block("RUSUNAWA",map["RUSUNAWA"])}
+  ${block("NOMOR UNIT/SARUSUNAWA",map["NOMOR UNIT/SARUSUNAWA"])}
+  ${block("NAMA LENGKAP",map["NAMA LENGKAP"])}
+  ${block("NOMOR HP/WA",map["NOMOR HP/WA"])}
+  ${block("EMAIL",map["EMAIL"])}
+  ${block("ISI LAPORAN",map["ISI LAPORAN"])}
 
-<hr class="border-slate-700 my-3">
+  <hr class="border-slate-700 my-3">
 
-${block("Pemeriksa",map["Pemeriksa"])}
-${block("Tanggal Periksa",fmt(map["Tanggal Periksa"]))}
-${block("Hasil Periksa",map["Hasil Periksa"])}
+  ${block("Pemeriksa",map["Pemeriksa"])}
+  ${block("Tanggal Periksa",fmt(map["Tanggal Periksa"]))}
+  ${block("Hasil Periksa",map["Hasil Periksa"])}
 
-<hr class="border-slate-700 my-3">
+  <hr class="border-slate-700 my-3">
 
-${block("Teknisi",map["Teknisi"])}
-${block("Tanggal Penanganan",fmt(map["Tanggal Penanganan"]))}
-${block("Hasil Penanganan",map["Hasil Penanganan"])}
+  ${block("Teknisi",map["Teknisi"])}
+  ${block("Tanggal Penanganan",fmt(map["Tanggal Penanganan"]))}
+  ${block("Hasil Penanganan",map["Hasil Penanganan"])}
 
-${gallery("FOTO PENANGANAN",map["Foto"])}
+  <button onclick="downloadLaporan()" class="mt-3 bg-emerald-600 px-4 py-2 rounded-xl font-semibold">
+  ⬇ Download Laporan
+  </button>
 
-<button onclick="downloadLaporan()" class="mt-3 bg-emerald-600 px-4 py-2 rounded-xl font-semibold">⬇ Download Laporan</button>
-</div>
-
-<div class="bg-slate-800 rounded-xl p-4 flex flex-col items-center justify-center">
-<div class="text-sm text-slate-400 mb-2">QR Code Aduan</div>
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(location.href)}" class="bg-white p-2 rounded-xl">
-</div>
-`;
-window._data=map;
+  </div>`;
+  window._data=map;
 }
 
-function block(l,v){if(!v)return"";return`<div><b>${l}:</b><br>${v}</div>`}
-
-function gallery(l,v){
-if(!v)return"";
-const arr=String(v).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
-return `<div><b>${l}:</b>
-<div class="grid grid-cols-3 gap-2 mt-1">
-${arr.map(x=>`<a href="${x}" target="_blank"><img src="${x}" class="rounded-lg border border-slate-700"></a>`).join("")}
-</div></div>`;
-}
+/* ===== HELPERS ===== */
+function block(l,v){ if(!v) return ""; return `<div><b>${l}:</b><br>${v}</div>` }
 
 function fmt(v){
-if(!v)return"";const d=new Date(v);if(isNaN(d))return v;
-return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+  if(!v) return "";
+  const d=new Date(v); if(isNaN(d)) return v;
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
 }
 
+/* ===== DOWNLOAD LAPORAN (TANPA STATUS & CATATAN) ===== */
 function downloadLaporan(){
-let t="LAPORAN ADUAN RUSUNAWA\n\n";
-for(let k in _data){t+=k+" : "+_data[k]+"\n";}
-const b=new Blob([t],{type:"text/plain"});
-const a=document.createElement("a");
-a.href=URL.createObjectURL(b);
-a.download="Laporan_"+_data["Submission ID"]+".txt";
-a.click();
+  let t="LAPORAN ADUAN RUSUNAWA\n\n";
+  for(let k in _data){
+    if(k.toLowerCase()=="status") continue;
+    if(k.toLowerCase()=="catatan") continue;
+    t+=k+" : "+_data[k]+"\n";
+  }
+  const b=new Blob([t],{type:"text/plain"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(b);
+  a.download="Laporan_"+(_data["Submission ID"]||"Aduan")+".txt";
+  a.click();
 }
 </script>
 </body>

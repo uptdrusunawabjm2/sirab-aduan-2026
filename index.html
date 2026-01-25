@@ -108,17 +108,21 @@ function renderUI(header,row){
   ${block("EMAIL",map["EMAIL"])}
   ${block("ISI LAPORAN",map["ISI LAPORAN"])}
 
-  <hr class="border-slate-700 my-3">
-
-  ${block("Pemeriksa",map["Pemeriksa"])}
-  ${block("Tanggal Periksa",fmt(map["Tanggal Periksa"]))}
-  ${block("Hasil Periksa",map["Hasil Periksa"])}
+  ${linkFoto("FOTO DOKUMENTASI", map["FOTO DOKUMENTASI"])}
 
   <hr class="border-slate-700 my-3">
 
-  ${block("Teknisi",map["Teknisi"])}
-  ${block("Tanggal Penanganan",fmt(map["Tanggal Penanganan"]))}
-  ${block("Hasil Penanganan",map["Hasil Penanganan"])}
+  ${block("PEMERIKSA",map["Pemeriksa"])}
+  ${block("TANGGAL PERIKSA",fmt(map["Tanggal Periksa"]))}
+  ${block("HASIL PERIKSA",map["Hasil Periksa"])}
+
+  <hr class="border-slate-700 my-3">
+
+  ${block("TEKNISI",map["Teknisi"])}
+  ${block("TANGGAL PENANGANAN",fmt(map["Tanggal Penanganan"]))}
+  ${block("HASIL PENANGANAN",map["Hasil Penanganan"])}
+
+  ${linkFoto("FOTO PENANGANAN", map["Foto"])}
 
   <button onclick="downloadLaporan()" class="mt-3 bg-emerald-600 px-4 py-2 rounded-xl font-semibold">
   ⬇ Download Laporan
@@ -130,6 +134,14 @@ function renderUI(header,row){
 
 /* ===== HELPERS ===== */
 function block(l,v){ if(!v) return ""; return `<div><b>${l}:</b><br>${v}</div>` }
+
+function linkFoto(label,val){
+  if(!val) return "";
+  const arr = String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
+  return `<div><b>${label}:</b><br>
+    ${arr.map(x=>`<a href="${x}" target="_blank" class="text-blue-400 underline mr-3">lihat</a>`).join("")}
+  </div>`;
+}
 
 function fmt(v){
   if(!v) return "";

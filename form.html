@@ -18,31 +18,13 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 .input{width:100%;padding:14px;font-size:16px;background:#020617;border:1px solid #334155;border-radius:14px;color:white;}
 .blockbox{border:1px solid #334155;border-radius:18px;padding:14px;background:#020617;}
 
-/* === FLATPICKR CERAH === */
-.flatpickr-calendar{
-  background:#f8fafc;
-  color:#0f172a;
-  border:1px solid #cbd5e1;
-  border-radius:14px;
-}
-.flatpickr-months, .flatpickr-weekdays{
-  background:#e2e8f0;
-  color:#0f172a;
-}
-.flatpickr-day{
-  color:#0f172a;
-  border-radius:8px;
-}
-.flatpickr-day.today{
-  border:1px solid #0ea5e9;
-}
-.flatpickr-day.selected{
-  background:#0ea5e9;
-  color:white;
-}
-.flatpickr-day:hover{
-  background:#bae6fd;
-}
+/* FLATPICKR CERAH */
+.flatpickr-calendar{background:#f8fafc;color:#0f172a;border:1px solid #cbd5e1;border-radius:14px;}
+.flatpickr-months, .flatpickr-weekdays{background:#e2e8f0;color:#0f172a;}
+.flatpickr-day{color:#0f172a;border-radius:8px;}
+.flatpickr-day.today{border:1px solid #0ea5e9;}
+.flatpickr-day.selected{background:#0ea5e9;color:white;}
+.flatpickr-day:hover{background:#bae6fd;}
 </style>
 </head>
 
@@ -91,6 +73,7 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 <div class="blockbox border-dashed">
   <div class="text-emerald-400 font-semibold mb-2">📷 Upload Foto Dokumentasi</div>
   <input id="foto" type="file" multiple accept="image/*" capture="environment" class="text-sm">
+  <div id="infoFoto" class="text-xs text-slate-400 mt-1"></div>
 </div>
 
 <label class="flex gap-2 text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
@@ -111,6 +94,7 @@ body{background:radial-gradient(circle at top,#0f172a,#020617);}
 const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const TRACKING="index.html";
 
+/* FLATPICKR */
 flatpickr("#janjiTanggal", {
   dateFormat: "m/d/Y",
   minDate: "today",
@@ -128,22 +112,58 @@ function valid(){
   return nama.value && hp.value && email.value && rusun.value && laporan.value && pernyataan.checked;
 }
 
+/* ================= KOMPRES FOTO ================= */
+
+async function compressImage(file, maxSize=1280, quality=0.7){
+  return new Promise(res=>{
+    const img=new Image();
+    const r=new FileReader();
+    r.onload=e=>{
+      img.onload=()=>{
+        let w=img.width, h=img.height;
+        if(w>h && w>maxSize){ h*=maxSize/w; w=maxSize; }
+        else if(h>maxSize){ w*=maxSize/h; h=maxSize; }
+
+        const c=document.createElement("canvas");
+        c.width=w; c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+
+        res(c.toDataURL("image/jpeg",quality));
+      };
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+/* ================= KIRIM ================= */
+
 async function kirim(){
   if(!valid()){
     msg.textContent="❗ Semua kolom wajib diisi dan pernyataan dicentang";
     return;
   }
 
-  msg.textContent="Mengirim aduan...";
+  msg.textContent="Mengompres foto...";
 
   grecaptcha.ready(async ()=>{
     const captcha = await grecaptcha.execute("6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu",{action:"submit"});
 
     let files=[];
+    let totalBefore=0, totalAfter=0;
+
     for(let f of foto.files){
-      const b=await toBase64(f);
-      files.push({file:b.split(",")[1], mimeType:f.type});
+      totalBefore += f.size;
+      const compressed = await compressImage(f);
+      totalAfter += Math.round((compressed.length*3)/4);
+      files.push({file:compressed.split(",")[1], mimeType:"image/jpeg"});
     }
+
+    infoFoto.textContent = foto.files.length
+      ? `📉 Kompres: ${(totalBefore/1024/1024).toFixed(2)} MB → ${(totalAfter/1024/1024).toFixed(2)} MB`
+      : "";
+
+    msg.textContent="Mengirim aduan...";
 
     const body={action:"create",captcha,nama:nama.value,hp:hp.value,email:email.value,rusun:rusun.value,unit:unit.value,laporan:laporan.value,janji:janji.value,pernyataan:"YA",files};
 
@@ -153,10 +173,6 @@ async function kirim(){
     if(j.success) location.href = TRACKING + "?ticket=" + j.id;
     else msg.textContent="❌ " + (j.error || "Gagal mengirim aduan");
   });
-}
-
-function toBase64(f){
-  return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f);});
 }
 </script>
 </body>

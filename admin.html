@@ -161,11 +161,16 @@ async function load(){
 
 /* ======================= FILTER BUILDER (TAMBAHAN) ======================= */
 function buildRusun(){
-  const idx=HEAD.indexOf("RUSUNAWA");
-  let s=new Set();
-  RAW.forEach(r=>s.add(r[idx]));
+  const idx = HEAD.indexOf("RUSUNAWA");
+
+  // RESET OPTION (INI KUNCI AGAR TIDAK DOUBLE)
+  filterRusun.innerHTML = '<option value="">Semua Rusunawa</option>';
+
+  let s = new Set();
+  RAW.forEach(r => s.add(r[idx]));
+
   [...s].filter(Boolean).forEach(v=>{
-    filterRusun.innerHTML+=`<option value="${v}">${v}</option>`;
+    filterRusun.innerHTML += `<option value="${v}">${v}</option>`;
   });
 }
 

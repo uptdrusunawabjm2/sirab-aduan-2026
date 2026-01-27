@@ -27,29 +27,31 @@
 </style>
 </head>
 
-<body class="bg-slate-950 text-white min-h-screen p-4 relative">
+<body class="bg-slate-950 text-white min-h-screen p-3 md:p-4 relative">
 
 <div class="watermark"><span>DATA ADUAN</span></div>
 
-<div class="max-w-7xl mx-auto space-y-4 relative z-10">
+<div class="max-w-7xl mx-auto space-y-3 relative z-10" id="wrap">
 
-  <div class="text-center">
-    <h1 class="text-2xl md:text-3xl font-bold">Tabel Aduan</h1>
-    <p class="text-slate-400 text-sm">hasil pekerjaan wajib dilaporkan ke admin</p>
+  <div class="text-center space-y-1">
+    <h1 class="text-xl md:text-3xl font-bold">Tabel Aduan</h1>
+    <p class="text-slate-400 text-xs md:text-sm">monitoring pengaduan rusunawa</p>
+    <p id="lastUpdate" class="text-[11px] text-slate-500"></p>
   </div>
 
   <!-- FILTER -->
-  <div class="grid md:grid-cols-5 gap-2">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+
     <input id="search" oninput="applyFilter()" placeholder="🔍 Cari data..."
-      class="p-2 rounded bg-slate-800 border border-slate-700">
+      class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
 
     <select id="filterRusun" onchange="applyFilter()"
-      class="p-2 rounded bg-slate-800 border border-slate-700">
+      class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
       <option value="">Semua Rusunawa</option>
     </select>
 
     <select id="filterStatus" onchange="applyFilter()"
-      class="p-2 rounded bg-slate-800 border border-slate-700">
+      class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
       <option value="">Semua Status</option>
       <option value="PENDING">PENDING</option>
       <option value="DIPERIKSA">DIPERIKSA</option>
@@ -57,21 +59,26 @@
     </select>
 
     <input id="fromDate" type="date" onchange="applyFilter()"
-      class="p-2 rounded bg-slate-800 border border-slate-700">
+      class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
 
     <input id="toDate" type="date" onchange="applyFilter()"
-      class="p-2 rounded bg-slate-800 border border-slate-700">
+      class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+
+    <button onclick="resetFilter()"
+      class="sm:col-span-2 md:col-span-3 lg:col-span-5 bg-red-600/20 border border-red-600 text-red-400 p-3 rounded-xl text-sm hover:bg-red-600 hover:text-white transition">
+      🔄 Reset Filter
+    </button>
   </div>
 
-  <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[70vh]">
-    <table class="w-full text-sm" id="table"></table>
+  <div id="tableBox" class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[65vh]">
+    <table class="w-full text-xs md:text-sm" id="table"></table>
   </div>
 
   <!-- PAGINATION -->
-  <div class="flex flex-wrap items-center justify-center gap-2 text-sm">
-    <button onclick="prevPage()" class="px-3 py-1 rounded bg-slate-800 border border-slate-700">⏮ Prev</button>
+  <div class="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
+    <button onclick="prevPage()" class="px-3 py-1.5 rounded bg-slate-800 border border-slate-700">⏮ Prev</button>
     <div id="pages" class="flex flex-wrap gap-1"></div>
-    <button onclick="nextPage()" class="px-3 py-1 rounded bg-slate-800 border border-slate-700">Next ⏭</button>
+    <button onclick="nextPage()" class="px-3 py-1.5 rounded bg-slate-800 border border-slate-700">Next ⏭</button>
   </div>
 
 </div>
@@ -80,6 +87,7 @@
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const PUBLIC_KEY = "rusun2026";
 const PER_PAGE = 10;
+const AUTO_REFRESH = 60000;
 
 const SHOW_COLS = [
   "Submission ID","Submission Date","RUSUNAWA","NAMA LENGKAP",
@@ -91,8 +99,11 @@ let HEAD=[], RAW=[], FILTERED=[];
 let IDX_DATE=-1, IDX_RUSUN=-1;
 let PAGE=1;
 
-load();
-async function load(){
+/* LOAD */
+load(true);
+setInterval(()=>load(false),AUTO_REFRESH);
+
+async function load(first){
   const r = await fetch(`${API}?action=all&key=${PUBLIC_KEY}`);
   const j = await r.json();
   HEAD=j.header; RAW=j.data;
@@ -101,10 +112,17 @@ async function load(){
   IDX_RUSUN = HEAD.indexOf("RUSUNAWA");
 
   RAW.sort((a,b)=> new Date(b[IDX_DATE]) - new Date(a[IDX_DATE]));
-  buildRusun();
-  applyFilter();
+  if(first) buildRusun();
+  applyFilter(false);
+  updateClock();
 }
 
+function updateClock(){
+  const d=new Date();
+  lastUpdate.textContent="Terakhir diperbarui: "+d.toLocaleTimeString("id-ID");
+}
+
+/* FILTER */
 function buildRusun(){
   let s=new Set();
   RAW.forEach(r=>s.add(r[IDX_RUSUN]));
@@ -113,8 +131,18 @@ function buildRusun(){
   });
 }
 
-function applyFilter(){
+function resetFilter(){
+  search.value="";
+  filterRusun.value="";
+  filterStatus.value="";
+  fromDate.value="";
+  toDate.value="";
   PAGE=1;
+  applyFilter(false);
+}
+
+function applyFilter(resetPage=true){
+  if(resetPage) PAGE=1;
   const q=search.value.toLowerCase();
   const rusun=filterRusun.value;
   const st=filterStatus.value;
@@ -124,7 +152,6 @@ function applyFilter(){
   FILTERED = RAW.filter(r=>{
     if(q && !r.join(" ").toLowerCase().includes(q)) return false;
     if(rusun && r[IDX_RUSUN]!==rusun) return false;
-
     const status=getStatus(r);
     if(st && status!==st) return false;
 
@@ -139,6 +166,7 @@ function applyFilter(){
   renderTable(); renderPages();
 }
 
+/* TABLE */
 function renderTable(){
   const start=(PAGE-1)*PER_PAGE;
   const rows=FILTERED.slice(start,start+PER_PAGE);
@@ -156,7 +184,7 @@ function renderTable(){
       if(c.h==="Submission Date") val=fmt(val);
       if(c.h==="NOMOR HP/WA") val=maskHP(val);
       if(c.h.toLowerCase().includes("foto")) val=foto(val);
-      h+=`<td class="p-2 border border-slate-800">${val}</td>`;
+      h+=`<td class="p-2 border border-slate-800 align-top">${val}</td>`;
     });
     h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td></tr>`;
   });
@@ -177,13 +205,14 @@ function badge(st){
   return `<span class="bg-yellow-400/20 text-yellow-300 px-2 py-1 rounded text-xs">PENDING</span>`;
 }
 
+/* PAGINATION */
 function renderPages(){
   pages.innerHTML="";
   const total=Math.ceil(FILTERED.length/PER_PAGE)||1;
   for(let i=1;i<=total;i++){
     const b=document.createElement("button");
     b.textContent=i;
-    b.className="px-3 py-1 rounded border "+(i===PAGE?"bg-blue-600 border-blue-500":"bg-slate-800 border-slate-700");
+    b.className="px-2 py-1 rounded border "+(i===PAGE?"bg-blue-600 border-blue-500":"bg-slate-800 border-slate-700");
     b.onclick=()=>{PAGE=i;renderTable();renderPages();};
     pages.appendChild(b);
   }
@@ -191,7 +220,8 @@ function renderPages(){
 function prevPage(){if(PAGE>1){PAGE--;renderTable();renderPages();}}
 function nextPage(){const t=Math.ceil(FILTERED.length/PER_PAGE)||1;if(PAGE<t){PAGE++;renderTable();renderPages();}}
 
-function fmt(v){const d=new Date(v);return isNaN(d)?v:d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});}
+/* UTIL */
+function fmt(v){const d=new Date(v);return isNaN(d)?v:d.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"});}
 function foto(v){if(!v) return "";return String(v).split(/\n|,/).map(x=>`<a href="${x.trim()}" target="_blank" class="text-cyan-400 underline mr-2">lihat</a>`).join("");}
 function maskHP(v){v=String(v||"").replace(/\D/g,"");return v.length<7?v:v.substring(0,4)+"****"+v.substring(v.length-4);}
 </script>

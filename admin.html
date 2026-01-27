@@ -56,9 +56,16 @@
   </div>
 </div>
 
-<div class="grid md:grid-cols-5 gap-2">
+<!-- FILTER -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+
   <input id="search" oninput="renderTable()" placeholder="🔍 Cari aduan..."
     class="p-2 rounded bg-slate-800 border border-slate-700">
+
+  <select id="filterRusun" onchange="renderTable()"
+    class="p-2 rounded bg-slate-800 border border-slate-700">
+    <option value="">Semua Rusunawa</option>
+  </select>
 
   <select id="filterStatus" onchange="renderTable()"
     class="p-2 rounded bg-slate-800 border border-slate-700">
@@ -73,8 +80,19 @@
     <option value="">Semua Tahun</option>
   </select>
 
+  <input id="fromDate" type="date" onchange="renderTable()"
+    class="p-2 rounded bg-slate-800 border border-slate-700">
+
+  <input id="toDate" type="date" onchange="renderTable()"
+    class="p-2 rounded bg-slate-800 border border-slate-700">
+
+  <button onclick="resetFilter()"
+    class="sm:col-span-2 md:col-span-3 lg:col-span-6 bg-red-600/20 border border-red-600 text-red-400 px-3 py-2 rounded hover:bg-red-600 hover:text-white transition">
+    🔄 Reset Filter
+  </button>
+
   <button onclick="exportExcel()"
-    class="md:col-span-2 bg-emerald-600 hover:bg-emerald-700 transition rounded px-4 py-2 font-semibold">
+    class="sm:col-span-2 md:col-span-3 lg:col-span-6 bg-emerald-600 hover:bg-emerald-700 transition rounded px-4 py-2 font-semibold">
     📤 Export Excel
   </button>
 </div>
@@ -86,7 +104,7 @@
 </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL (TIDAK DIUBAH) -->
 <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
 
@@ -136,6 +154,29 @@ async function load(){
 
   DATA=[...RAW];
   buildYear();
+  buildRusun();
+  hitungRekap();
+  renderTable();
+}
+
+/* ======================= FILTER BUILDER (TAMBAHAN) ======================= */
+function buildRusun(){
+  const idx=HEAD.indexOf("RUSUNAWA");
+  let s=new Set();
+  RAW.forEach(r=>s.add(r[idx]));
+  [...s].filter(Boolean).forEach(v=>{
+    filterRusun.innerHTML+=`<option value="${v}">${v}</option>`;
+  });
+}
+
+function resetFilter(){
+  search.value="";
+  filterStatus.value="";
+  filterTahun.value="";
+  filterRusun.value="";
+  fromDate.value="";
+  toDate.value="";
+  DATA=[...RAW];
   hitungRekap();
   renderTable();
 }
@@ -173,7 +214,35 @@ function renderTable(){
   table.innerHTML=h;
 }
 
-/* ======================= AKSI (DIPULIHKAN) ======================= */
+/* ======================= FILTER LOGIC (DIPERLUAS) ======================= */
+function getVisibleRows(){
+  const q=search.value.toLowerCase();
+  const f=filterStatus.value;
+  const rusun=filterRusun.value;
+  const from=fromDate.value?new Date(fromDate.value):null;
+  const to=toDate.value?new Date(toDate.value):null;
+
+  const idxDate=HEAD.indexOf("Submission Date");
+  const idxRusun=HEAD.indexOf("RUSUNAWA");
+
+  return DATA.filter(r=>{
+    const txt=r.join(" ").toLowerCase();
+    const st=getStatus(r);
+
+    if(q && !txt.includes(q)) return false;
+    if(f && st!==f) return false;
+    if(rusun && r[idxRusun]!==rusun) return false;
+
+    if(from||to){
+      const d=new Date(r[idxDate]);
+      if(from && d<from) return false;
+      if(to){const t=new Date(to);t.setHours(23,59,59,999);if(d>t) return false;}
+    }
+    return true;
+  });
+}
+
+/* ======================= FUNGSI LAMA (TIDAK DIUBAH) ======================= */
 
 function openModal(row){
   const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
@@ -229,7 +298,6 @@ function closeModal(){
   msg.textContent="";
 }
 
-/* ======================= UTIL ======================= */
 function toInputDate(v){
   if(!v) return "";
   const d=new Date(v); if(isNaN(d)) return "";
@@ -288,18 +356,6 @@ function hitungRekap(){
   rPending.textContent=p;
   rPeriksa.textContent=d;
   rSelesai.textContent=s;
-}
-
-function getVisibleRows(){
-  const q=search.value.toLowerCase();
-  const f=filterStatus.value;
-  return DATA.filter(r=>{
-    const txt=r.join(" ").toLowerCase();
-    const st=getStatus(r);
-    if(q && !txt.includes(q)) return false;
-    if(f && st!==f) return false;
-    return true;
-  });
 }
 
 function formatTanggal(val){

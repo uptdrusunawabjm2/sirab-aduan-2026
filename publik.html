@@ -225,16 +225,29 @@ function fmt(v){
  return isNaN(d)?v:d.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"});
 }
 
+/* ====== INI SATU-SATUNYA BAGIAN YANG DIPERBAIKI ====== */
 function fmtHariJamSheet(v){
  if(!v) return "";
- const raw=String(v).trim();
- const parts=raw.split(" ");
- const d=new Date(parts[0]);
+ const raw = String(v).trim();
+
+ // ambil jam dari teks sheet (contoh 15:00-16:00)
+ const jamMatch = raw.match(/\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}|\d{1,2}:\d{2}/);
+ const jam = jamMatch ? jamMatch[0] : "";
+
+ // parsing tanggal dari seluruh string
+ const d = new Date(raw);
  if(isNaN(d)) return raw;
- const tanggal=d.toLocaleDateString("id-ID",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
- const jam=raw.replace(parts[0],"").trim();
- return jam? tanggal+" "+jam : tanggal;
+
+ const tanggal = d.toLocaleDateString("id-ID",{
+   weekday:"long",
+   day:"2-digit",
+   month:"long",
+   year:"numeric"
+ });
+
+ return jam ? tanggal+" "+jam : tanggal;
 }
+/* =================================================== */
 
 function foto(v){
  if(!v) return "";

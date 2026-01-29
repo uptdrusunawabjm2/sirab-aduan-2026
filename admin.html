@@ -104,7 +104,7 @@
 </div>
 </div>
 
-<!-- MODAL (TIDAK DIUBAH) -->
+<!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full max-w-lg space-y-2">
 
@@ -159,16 +159,12 @@ async function load(){
   renderTable();
 }
 
-/* ======================= FILTER BUILDER (TAMBAHAN) ======================= */
+/* ======================= FILTER BUILDER ======================= */
 function buildRusun(){
   const idx = HEAD.indexOf("RUSUNAWA");
-
-  // RESET OPTION (INI KUNCI AGAR TIDAK DOUBLE)
   filterRusun.innerHTML = '<option value="">Semua Rusunawa</option>';
-
   let s = new Set();
   RAW.forEach(r => s.add(r[idx]));
-
   [...s].filter(Boolean).forEach(v=>{
     filterRusun.innerHTML += `<option value="${v}">${v}</option>`;
   });
@@ -219,7 +215,7 @@ function renderTable(){
   table.innerHTML=h;
 }
 
-/* ======================= FILTER LOGIC (DIPERLUAS) ======================= */
+/* ======================= FILTER LOGIC ======================= */
 function getVisibleRows(){
   const q=search.value.toLowerCase();
   const f=filterStatus.value;
@@ -247,7 +243,7 @@ function getVisibleRows(){
   });
 }
 
-/* ======================= FUNGSI LAMA (TIDAK DIUBAH) ======================= */
+/* ======================= FUNGSI LAMA ======================= */
 
 function openModal(row){
   const m={}; HEAD.forEach((h,i)=>m[h]=row[i]);
@@ -266,12 +262,33 @@ function openModal(row){
   modal.classList.add("flex");
 }
 
+/* ========== TAMBAHAN: KOMPRES FOTO ========== */
+async function compressImage(file, maxSize=1280, quality=0.7){
+  return new Promise(res=>{
+    const img=new Image(), r=new FileReader();
+    r.onload=e=>{
+      img.onload=()=>{
+        let w=img.width, h=img.height;
+        if(w>h && w>maxSize){ h*=maxSize/w; w=maxSize; }
+        else if(h>maxSize){ w*=maxSize/h; h=maxSize; }
+        const c=document.createElement("canvas");
+        c.width=w; c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        res(c.toDataURL("image/jpeg",quality));
+      };
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+/* =========================================== */
+
 async function simpan(){
-  msg.textContent="Menyimpan...";
+  msg.textContent="Mengompres foto...";
   let files=[];
   for(let f of foto.files){
-    const b64=await toBase64(f);
-    files.push({file:b64.split(",")[1], mimeType:f.type});
+    const compressed = await compressImage(f);
+    files.push({file:compressed.split(",")[1], mimeType:"image/jpeg"});
   }
 
   const body={

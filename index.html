@@ -136,7 +136,6 @@ function renderUI(header,row){
 
 function block(l,v){ if(!v) return ""; return `<div><b>${l}:</b><br>${v}</div>` }
 
-/* === FOTO LINK (AMAN UNTUK SEMUA URL) === */
 function linkFoto(label,val){
   if(!val) return "";
   const arr = String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
@@ -145,8 +144,16 @@ function linkFoto(label,val){
   </div>`;
 }
 
+/* ===== TAMBAHAN AMAN (TIDAK MERUSAK LOGIKA) ===== */
+function drivePreview(url){
+  const m = url.match(/\/d\/(.*?)\//);
+  if(m && m[1]) return "https://drive.google.com/uc?export=view&id="+m[1];
+  return url;
+}
+/* =============================================== */
+
 function openFoto(url){
-  fotoView.src=url;
+  fotoView.src = drivePreview(url);
   fotoModal.classList.remove("hidden");
   fotoModal.classList.add("flex");
 }

@@ -25,24 +25,19 @@ body { min-height:100svh; }
   <button onclick="cek()" class="bg-blue-600 px-5 rounded-xl font-semibold hover:bg-blue-700 transition">Cek</button>
 </div>
 
-<!-- STATUS -->
 <div id="statusBox" class="hidden mb-4 p-3 rounded-xl text-center font-bold text-lg"></div>
-
-<!-- HASIL -->
 <div id="hasil" class="hidden grid grid-cols-1 gap-4"></div>
-
 <div id="msg" class="text-center text-red-400 text-sm mt-3"></div>
 
 </div>
 
-<!-- ============ POPUP FOTO ============ -->
+<!-- POPUP FOTO -->
 <div id="fotoModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
   <div class="relative max-w-3xl w-full">
     <button onclick="closeFoto()" class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full w-8 h-8">✕</button>
     <img id="fotoView" src="" class="w-full max-h-[85vh] object-contain rounded-xl border border-slate-700 bg-black">
   </div>
 </div>
-<!-- =================================== -->
 
 <script>
 const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
@@ -79,7 +74,6 @@ async function cek(){
   }
 }
 
-/* ===== STATUS TEKS ===== */
 function renderStatus(header,row){
   const map={}; header.forEach((h,i)=>map[h]=row[i]);
 
@@ -101,7 +95,6 @@ function renderStatus(header,row){
   statusBox.classList.remove("hidden");
 }
 
-/* ===== UI ===== */
 function renderUI(header,row){
   const map={}; header.forEach((h,i)=>map[h]=row[i]);
 
@@ -141,18 +134,16 @@ function renderUI(header,row){
   window._data=map;
 }
 
-/* ===== HELPERS ===== */
 function block(l,v){ if(!v) return ""; return `<div><b>${l}:</b><br>${v}</div>` }
 
-/* === FOTO LINK (DIPERBAIKI JADI POPUP) === */
+/* === FOTO LINK (AMAN UNTUK SEMUA URL) === */
 function linkFoto(label,val){
   if(!val) return "";
   const arr = String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
   return `<div><b>${label}:</b><br>
-    ${arr.map(x=>`<span onclick="openFoto('${x}')" class="text-blue-400 underline mr-3 cursor-pointer">lihat</span>`).join("")}
+    ${arr.map(x=>`<span data-url="${x}" onclick="openFoto(this.dataset.url)" class="text-blue-400 underline mr-3 cursor-pointer">lihat</span>`).join("")}
   </div>`;
 }
-/* ======================================== */
 
 function openFoto(url){
   fotoView.src=url;
@@ -171,7 +162,6 @@ function fmt(v){
   return d.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
 }
 
-/* ===== DOWNLOAD LAPORAN (TANPA STATUS, CATATAN, FOTO) ===== */
 function downloadLaporan(){
   let t="LAPORAN ADUAN RUSUNAWA\n\n";
   for(let k in _data){

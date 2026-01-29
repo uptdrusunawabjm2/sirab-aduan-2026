@@ -89,6 +89,15 @@
 
 </div>
 
+<!-- ================= POPUP FOTO ================= -->
+<div id="fotoModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+  <div class="relative max-w-3xl w-full">
+    <button onclick="closeFoto()" class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full w-8 h-8">✕</button>
+    <img id="fotoView" src="" class="w-full max-h-[85vh] object-contain rounded-xl border border-slate-700 bg-black">
+  </div>
+</div>
+<!-- ============================================== -->
+
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const PUBLIC_KEY = "rusun2026";
@@ -104,6 +113,19 @@ let HEAD=[], RAW=[], FILTERED=[];
 let IDX_DATE=-1, IDX_RUSUN=-1, PAGE=1;
 
 load(true);
+
+/* ===== POPUP FOTO ===== */
+function openFoto(url){
+  fotoView.src = url;
+  fotoModal.classList.remove("hidden");
+  fotoModal.classList.add("flex");
+}
+function closeFoto(){
+  fotoModal.classList.add("hidden");
+  fotoModal.classList.remove("flex");
+  fotoView.src="";
+}
+/* ====================== */
 
 async function load(first){
  const r = await fetch(`${API}?action=all&key=${PUBLIC_KEY}`);
@@ -193,6 +215,17 @@ function renderTable(){
  table.innerHTML=h;
 }
 
+/* ===== FOTO CELL (DIPERBAIKI) ===== */
+function foto(v){
+ if(!v) return "";
+ return String(v).split(/\n|,/)
+  .map(x=>x.trim())
+  .filter(Boolean)
+  .map(x=>`<span onclick="openFoto('${x}')" class="text-cyan-400 underline mr-2 cursor-pointer">lihat</span>`)
+  .join("");
+}
+/* ================================= */
+
 function getStatus(r){
  const m={}; HEAD.forEach((h,i)=>m[h]=r[i]);
  if(m["Teknisi"]&&m["Tanggal Penanganan"]&&m["Hasil Penanganan"]) return "SELESAI";
@@ -225,33 +258,20 @@ function fmt(v){
  return isNaN(d)?v:d.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"});
 }
 
-/* ====== INI SATU-SATUNYA BAGIAN YANG DIPERBAIKI ====== */
 function fmtHariJamSheet(v){
  if(!v) return "";
  const raw = String(v).trim();
-
- // ambil jam dari teks sheet (contoh 15:00-16:00)
  const jamMatch = raw.match(/\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}|\d{1,2}:\d{2}/);
  const jam = jamMatch ? jamMatch[0] : "";
-
- // parsing tanggal dari seluruh string
  const d = new Date(raw);
  if(isNaN(d)) return raw;
-
  const tanggal = d.toLocaleDateString("id-ID",{
    weekday:"long",
    day:"2-digit",
    month:"long",
    year:"numeric"
  });
-
  return jam ? tanggal+" "+jam : tanggal;
-}
-/* =================================================== */
-
-function foto(v){
- if(!v) return "";
- return String(v).split(/\n|,/).map(x=>`<a href="${x.trim()}" target="_blank" class="text-cyan-400 underline mr-2">lihat</a>`).join("");
 }
 
 function maskHP(v){

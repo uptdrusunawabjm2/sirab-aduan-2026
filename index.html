@@ -35,6 +35,15 @@ body { min-height:100svh; }
 
 </div>
 
+<!-- ============ POPUP FOTO ============ -->
+<div id="fotoModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+  <div class="relative max-w-3xl w-full">
+    <button onclick="closeFoto()" class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full w-8 h-8">✕</button>
+    <img id="fotoView" src="" class="w-full max-h-[85vh] object-contain rounded-xl border border-slate-700 bg-black">
+  </div>
+</div>
+<!-- =================================== -->
+
 <script>
 const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 
@@ -135,12 +144,25 @@ function renderUI(header,row){
 /* ===== HELPERS ===== */
 function block(l,v){ if(!v) return ""; return `<div><b>${l}:</b><br>${v}</div>` }
 
+/* === FOTO LINK (DIPERBAIKI JADI POPUP) === */
 function linkFoto(label,val){
   if(!val) return "";
   const arr = String(val).split(/\n|,/).map(x=>x.trim()).filter(Boolean);
   return `<div><b>${label}:</b><br>
-    ${arr.map(x=>`<a href="${x}" target="_blank" class="text-blue-400 underline mr-3">lihat</a>`).join("")}
+    ${arr.map(x=>`<span onclick="openFoto('${x}')" class="text-blue-400 underline mr-3 cursor-pointer">lihat</span>`).join("")}
   </div>`;
+}
+/* ======================================== */
+
+function openFoto(url){
+  fotoView.src=url;
+  fotoModal.classList.remove("hidden");
+  fotoModal.classList.add("flex");
+}
+function closeFoto(){
+  fotoModal.classList.add("hidden");
+  fotoModal.classList.remove("flex");
+  fotoView.src="";
 }
 
 function fmt(v){

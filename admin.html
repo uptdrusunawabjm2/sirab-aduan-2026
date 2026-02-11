@@ -10,7 +10,7 @@
 <body class="bg-slate-950 text-white min-h-screen md:flex">
 
 <div id="sidebar"
-     class="w-0 md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col
+     class="w-64 md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col
      transition-all duration-300 fixed md:relative h-full md:h-auto
      z-50 md:z-auto left-0 top-0 overflow-hidden">
 
@@ -156,7 +156,12 @@
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const key = sessionStorage.getItem("adminKey");
 const ADMIN_ID = "ADM-" + Math.random().toString(36).substring(2,9);
-const sidebar = document.getElementById("sidebar");
+let sidebar;
+
+window.addEventListener("DOMContentLoaded", ()=>{
+  sidebar = document.getElementById("sidebar");
+});
+
 
 if(!key) location.href="login.html";
 

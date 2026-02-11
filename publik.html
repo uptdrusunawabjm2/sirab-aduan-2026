@@ -138,7 +138,24 @@ async function load(first){
  RAW.sort((a,b)=> new Date(b[IDX_DATE]) - new Date(a[IDX_DATE]));
  if(first) buildRusun();
  applyFilter(false);
- lastUpdate.textContent="Update: "+new Date().toLocaleTimeString("id-ID");
+
+const now = new Date();
+
+const tanggal = now.toLocaleDateString("id-ID", {
+  timeZone: "Asia/Makassar",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric"
+});
+
+const jam = now.toLocaleTimeString("id-ID", {
+  timeZone: "Asia/Makassar",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false
+});
+
+lastUpdate.textContent = `Update: ${tanggal} Pukul ${jam} WITA`;
 }
 
 function buildRusun(){

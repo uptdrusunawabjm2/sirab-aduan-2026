@@ -31,12 +31,12 @@ async function login(){
   const r=await fetch(`${API}?action=login&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`);
   const j=await r.json();
 
-  if(j.success){
-    sessionStorage.setItem("adminKey", p); // ✅ DISAMAKAN DENGAN admin.html
-    location.href="admin.html";
-  } else {
-    msg.textContent="❌ Username atau password salah";
-  }
+if(j.success){
+  sessionStorage.setItem("adminKey", p);
+  sessionStorage.setItem("loginActive","1");
+  location.href="admin.html";
+}
+
 }
 </script>
 </body>

@@ -40,6 +40,11 @@
   <div id="rUsers" class="text-2xl font-bold text-purple-400">0</div>
 </div>
 
+<div class="bg-emerald-600/20 border border-emerald-600 rounded-xl p-4">
+  <div class="text-emerald-300 text-sm">Admin Online</div>
+  <div id="rOnline" class="text-2xl font-bold text-emerald-400">0</div>
+</div>
+
 <div class="p-4 space-y-4">
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -141,10 +146,12 @@
 /* ======================= KONFIG ======================= */
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const key = sessionStorage.getItem("adminKey");
+const ADMIN_ID = "ADM-" + Math.random().toString(36).substring(2,9);
 if(!key) location.href="login.html";
 
 let HEAD=[], DATA=[], RAW=[], SID="";
 const HIDE_COLS = ["FOTO DOKUMENTASI","JANJI TEMU","PERNYATAAN","Status","EMAIL"];
+
 
 load();
 
@@ -154,7 +161,7 @@ async function load(){
   const j = await r.json();
 
   if(j.users!==undefined) rUsers.textContent=j.users;
-
+  if(j.online!==undefined) rOnline.textContent=j.online;
   
   HEAD=j.header; RAW=j.data;
 
@@ -414,6 +421,24 @@ async function logout(){
   sessionStorage.clear();
   location.href="login.html";
 }
+
+/* ================= ONLINE HEARTBEAT ================= */
+
+async function pingOnline(){
+  try{
+    const r = await fetch(`${API}?action=online_ping&id=${ADMIN_ID}`);
+    const j = await r.json();
+    if(j.online!==undefined) rOnline.textContent=j.online;
+  }catch(e){}
+}
+
+setInterval(pingOnline, 15000); // ping tiap 15 detik
+pingOnline();
+
+/* AUTO OFFLINE SAAT TUTUP TAB */
+window.addEventListener("beforeunload", ()=>{
+  navigator.sendBeacon(`${API}?action=online_leave&id=${ADMIN_ID}`);
+});
 
 </script>
 </body>

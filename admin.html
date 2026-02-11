@@ -9,7 +9,7 @@
 
 <body class="bg-slate-950 text-white min-h-screen md:flex">
 
-<div id="sidebar" class="w-64 md:w-64 w-0 md:flex bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300">
+<div id="sidebar" class="hidden md:flex w-64 w-0 md:w-64 bg-slate-900 border-r border-slate-800 flex-col transition-all duration-300">
 
   <div class="p-4 border-b border-slate-800">
     <div class="text-xl font-bold">Admin Panel</div>
@@ -416,13 +416,27 @@ function badge(st){
 }
 
 function toggleSidebar(){
-  sidebar.classList.toggle("w-64");
-  sidebar.classList.toggle("w-0");
-  sidebar.classList.toggle("overflow-hidden");
-  sidebar.classList.toggle("fixed");
-  sidebar.classList.toggle("z-50");
-  sidebar.classList.toggle("h-full");
+
+  // MOBILE
+  if(window.innerWidth < 768){
+    sidebar.classList.toggle("w-64");
+    sidebar.classList.toggle("w-0");
+    sidebar.classList.toggle("fixed");
+    sidebar.classList.toggle("z-50");
+    sidebar.classList.toggle("h-full");
+    sidebar.classList.toggle("left-0");
+    sidebar.classList.toggle("top-0");
+    return;
+  }
+
+  // DESKTOP (BENAR2 HIDE)
+  if(sidebar.classList.contains("hidden")){
+    sidebar.classList.remove("hidden");
+  }else{
+    sidebar.classList.add("hidden");
+  }
 }
+
 
 async function logout(){
   try{
@@ -448,6 +462,27 @@ pingOnline();
 /* AUTO OFFLINE SAAT TUTUP TAB */
 window.addEventListener("beforeunload", ()=>{
   navigator.sendBeacon(`${API}?action=online_leave&id=${ADMIN_ID}`);
+});
+
+/* AUTO CLOSE SIDEBAR SAAT KLIK LUAR (MOBILE) */
+document.addEventListener("click", e=>{
+  if(window.innerWidth < 768){
+    if(
+      !sidebar.contains(e.target) &&
+      !e.target.closest("#sidebar") &&
+      !e.target.closest("[onclick='toggleSidebar()']")
+    ){
+      sidebar.classList.add("w-0");
+      sidebar.classList.remove("w-64","fixed","z-50","h-full","left-0","top-0");
+    }
+  }
+});
+
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape" && window.innerWidth < 768){
+    sidebar.classList.add("w-0");
+    sidebar.classList.remove("w-64","fixed","z-50","h-full","left-0","top-0");
+  }
 });
 
 </script>

@@ -238,7 +238,7 @@ function foto(v){
  return String(v).split(/\n|,/)
   .map(x=>x.trim())
   .filter(Boolean)
-  .map(x=>`<span onclick="openFoto('${x}')" class="text-cyan-400 underline mr-2 cursor-pointer">lihat</span>`)
+  .map(x=>`<a href="${x}" target="_blank" rel="noopener" class="text-cyan-400 underline mr-2">lihat</a>`)
   .join("");
 }
 /* ================================= */

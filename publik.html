@@ -18,6 +18,26 @@
   transform:rotate(-25deg);
   user-select:none; white-space:nowrap;
 }
+
+<style>
+/* ===== MOBILE TABLE FIX ===== */
+@media (max-width: 768px){
+
+  #table th,
+  #table td{
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+    padding: 6px 6px;
+  }
+
+  #table th{
+    font-size: 10px;
+  }
+
+}
+</style>
 </style>
 </head>
 
@@ -91,7 +111,7 @@
 
 </div>
 
-<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[65vh]">
+<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-x-hidden md:overflow-auto max-h-[65vh]">
   <table class="w-full text-xs md:text-sm" id="table"></table>
 </div>
 

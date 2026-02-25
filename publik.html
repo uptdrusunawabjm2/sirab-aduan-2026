@@ -59,34 +59,33 @@
 </div>
 
 <!-- FILTER -->
-<!-- FILTER -->
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1.5 md:gap-2">
 
   <input id="search" oninput="applyFilter()" placeholder="🔍 Cari data..."
-    class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+    class="py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-slate-800 border border-slate-700 text-xs md:text-sm">
 
   <select id="filterRusun" onchange="applyFilter()"
-    class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+    class="py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-slate-800 border border-slate-700 text-xs md:text-sm">
     <option value="">Semua Rusunawa</option>
   </select>
 
   <select id="filterStatus" onchange="applyFilter()"
-    class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+    class="py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-slate-800 border border-slate-700 text-xs md:text-sm">
     <option value="">Semua Status</option>
     <option value="PENDING">MENUNGGU</option>
     <option value="DIPERIKSA">DIPERIKSA</option>
     <option value="SELESAI">SELESAI</option>
   </select>
 
-  <!-- FILTER TANGGAL (SEMBUNYI DI MOBILE) -->
+  <!-- FILTER TANGGAL (TETAP TERSEMBUNYI DI MOBILE) -->
   <input id="fromDate" type="date" onchange="applyFilter()"
-    class="hidden md:block p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+    class="hidden md:block py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-slate-800 border border-slate-700 text-xs md:text-sm">
 
   <input id="toDate" type="date" onchange="applyFilter()"
-    class="hidden md:block p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+    class="hidden md:block py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-slate-800 border border-slate-700 text-xs md:text-sm">
 
   <button onclick="resetFilter()"
-    class="sm:col-span-2 md:col-span-3 lg:col-span-5 bg-red-600/20 border border-red-600 text-red-400 p-3 rounded-xl text-sm hover:bg-red-600 hover:text-white">
+    class="sm:col-span-2 md:col-span-3 lg:col-span-5 py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-red-600/20 border border-red-600 text-red-400 text-xs md:text-sm hover:bg-red-600 hover:text-white">
     🔄 Reset Filter
   </button>
 

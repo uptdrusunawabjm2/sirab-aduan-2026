@@ -78,32 +78,40 @@
 </div>
 
 <!-- FILTER BAR -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-stretch">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
 
-  <!-- SEARCH -->
-  <input id="search" oninput="applyFilter()" placeholder="🔍 Cari data..."
-    class="w-full h-11 px-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+  <!-- SEARCH (FULL MOBILE) -->
+  <div class="col-span-2 md:col-span-1">
+    <input id="search" oninput="applyFilter()" placeholder="🔍 Cari data..."
+      class="w-full h-11 px-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+  </div>
 
   <!-- RUSUN -->
-  <select id="filterRusun" onchange="applyFilter()"
-    class="w-full h-11 px-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
-    <option value="">Semua Rusunawa</option>
-  </select>
+  <div>
+    <select id="filterRusun" onchange="applyFilter()"
+      class="w-full h-11 px-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+      <option value="">Semua Rusunawa</option>
+    </select>
+  </div>
 
   <!-- STATUS -->
-  <select id="filterStatus" onchange="applyFilter()"
-    class="w-full h-11 px-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
-    <option value="">Semua Status</option>
-    <option value="PENDING">MENUNGGU</option>
-    <option value="DIPERIKSA">DIPERIKSA</option>
-    <option value="SELESAI">SELESAI</option>
-  </select>
+  <div>
+    <select id="filterStatus" onchange="applyFilter()"
+      class="w-full h-11 px-3 rounded-xl bg-slate-800 border border-slate-700 text-sm">
+      <option value="">Semua Status</option>
+      <option value="PENDING">MENUNGGU</option>
+      <option value="DIPERIKSA">DIPERIKSA</option>
+      <option value="SELESAI">SELESAI</option>
+    </select>
+  </div>
 
-  <!-- RESET -->
-  <button onclick="resetFilter()"
-    class="w-full h-11 rounded-xl bg-red-600/20 border border-red-600 text-red-400 hover:bg-red-600 hover:text-white transition text-sm">
-    🔄 Reset Filter
-  </button>
+  <!-- RESET (FULL MOBILE) -->
+  <div class="col-span-2 md:col-span-1">
+    <button onclick="resetFilter()"
+      class="w-full h-11 rounded-xl bg-red-600/20 border border-red-600 text-red-400 hover:bg-red-600 hover:text-white transition text-sm">
+      🔄 Reset Filter
+    </button>
+  </div>
 
 </div>
 

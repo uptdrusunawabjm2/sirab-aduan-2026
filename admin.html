@@ -224,6 +224,22 @@ function exportXLS(){
   // buat worksheet
   const ws = XLSX.utils.aoa_to_sheet(data);
 
+  // format kolom tanggal dd/mm/yyyy
+cols.forEach((c, colIndex)=>{
+  if(
+    c.h === "Submission Date" ||
+    c.h === "Tanggal Periksa" ||
+    c.h === "Tanggal Penanganan"
+  ){
+    for(let row=1; row<data.length; row++){
+      const cell = XLSX.utils.encode_cell({r:row, c:colIndex});
+      if(ws[cell] && ws[cell].v instanceof Date){
+        ws[cell].z = "dd/mm/yyyy";
+      }
+    }
+  }
+});
+
   // buat workbook
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Data Aduan");

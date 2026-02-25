@@ -112,6 +112,33 @@
 </div>
 <!-- ============================================== -->
 
+
+<!-- ================= POPUP STATUS ================= -->
+<div id="statusModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+  <div class="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-lg p-5 space-y-4 relative">
+
+    <button onclick="closeStatus()" 
+      class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full w-8 h-8">✕</button>
+
+    <h2 class="text-lg font-bold text-center">Detail Status Aduan</h2>
+
+    <div>
+      <div class="text-xs text-slate-400">HASIL PERIKSA</div>
+      <div id="modalPeriksa" class="text-sm"></div>
+    </div>
+
+    <div>
+      <div class="text-xs text-slate-400">HASIL PENANGANAN</div>
+      <div id="modalPenanganan" class="text-sm"></div>
+    </div>
+
+    <div>
+      <div class="text-xs text-slate-400">CATATAN</div>
+      <div id="modalCatatan" class="text-sm"></div>
+    </div>
+
+  </div>
+</div>
 <script>
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const PUBLIC_KEY = "rusun2026";
@@ -241,7 +268,11 @@ function renderTable(){
    if(c.h.toLowerCase().includes("foto")) val=foto(val);
    h+=`<td class="p-2 border border-slate-800 align-top">${val}</td>`;
   });
-  h+=`<td class="p-2 border border-slate-800 text-center">${badge(st)}</td></tr>`;
+  h+=`<td class="p-2 border border-slate-800 text-center">
+       <div onclick='openStatus(${JSON.stringify(r)})' class="cursor-pointer">
+         ${badge(st)}
+       </div>
+     </td></tr>`;
  });
  table.innerHTML=h;
 }
@@ -309,6 +340,49 @@ function maskHP(v){
  v=String(v||"").replace(/\D/g,"");
  return v.length<7?v:v.substring(0,4)+"****"+v.substring(v.length-4);
 }
+
+function openStatus(row){
+
+  const map = {};
+  HEAD.forEach((h,i)=>map[h]=row[i]);
+
+  const hasilPeriksa    = map["Hasil Periksa"];
+  const hasilPenanganan = map["Hasil Penanganan"];
+  const catatan         = map["Catatan"];
+
+  const status = getStatus(row);
+
+  /* ===== STATUS MENUNGGU ===== */
+  if(status === "PENDING"){
+    modalPeriksa.textContent    = "Belum diperiksa";
+    modalPenanganan.textContent = "-";
+    modalCatatan.textContent    = catatan ? catatan : "-";
+  }
+
+  /* ===== STATUS DIPERIKSA ===== */
+  else if(status === "DIPERIKSA"){
+    modalPeriksa.textContent    = hasilPeriksa ? hasilPeriksa : "-";
+    modalPenanganan.textContent = "-";
+    modalCatatan.textContent    = catatan ? catatan : "-";
+  }
+
+  /* ===== STATUS SELESAI ===== */
+  else if(status === "SELESAI"){
+    modalPeriksa.textContent    = hasilPeriksa ? hasilPeriksa : "-";
+    modalPenanganan.textContent = hasilPenanganan ? hasilPenanganan : "-";
+    modalCatatan.textContent    = catatan ? catatan : "-";
+  }
+
+  statusModal.classList.remove("hidden");
+  statusModal.classList.add("flex");
+}
+
+function closeStatus(){
+  statusModal.classList.add("hidden");
+  statusModal.classList.remove("flex");
+}
+
+<!-- ================================================ -->
 </script>
 </body>
 </html>

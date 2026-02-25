@@ -114,11 +114,11 @@ transition-all duration-300 overflow-hidden">
     <option value="">Semua Tahun</option>
   </select>
 
-  <!-- DROPDOWN FILTER TANGGAL -->
-  <select id="filterTanggal" onchange="renderTable()"
-    class="p-2 rounded bg-slate-800 border border-slate-700">
-    <option value="">Semua Tanggal</option>
-  </select>
+  <!-- DATE PICKER -->
+  <input id="filterTanggal"
+        type="date"
+        onchange="renderTable()"
+        class="p-2 rounded bg-slate-800 border border-slate-700">
 
   <!-- EXPORT EXCEL -->
   <button onclick="exportXLS()"
@@ -223,6 +223,9 @@ function exportXLS(){
 
   // buat worksheet
   const ws = XLSX.utils.aoa_to_sheet(data);
+  ws["!cols"] = data[0].map((_,i)=>({
+  wch: Math.max(...data.map(r=>String(r[i]||"").length))+2
+}));
 
   // format kolom tanggal dd/mm/yyyy
 cols.forEach((c, colIndex)=>{
@@ -282,7 +285,6 @@ async function load(){
   DATA=[...RAW];
   buildYear();
   buildRusun();
-  buildTanggal();
   hitungRekap();
   renderTable();
 }
@@ -303,7 +305,7 @@ function resetFilter(){
   filterStatus.value="";
   filterTahun.value="";
   filterRusun.value="";
-  filterTanggal.value="";   // <-- ganti ini
+  filterTanggal.value="";
   DATA=[...RAW];
   hitungRekap();
   renderTable();
@@ -344,26 +346,29 @@ function renderTable(){
 
 /* ======================= FILTER LOGIC ======================= */
 function getVisibleRows(){
-  const q=search.value.toLowerCase();
-  const f=filterStatus.value;
-  const rusun=filterRusun.value;
+  const q = search.value.toLowerCase();
+  const f = filterStatus.value;
+  const rusun = filterRusun.value;
   const tgl = filterTanggal.value;
 
-  const idxDate=HEAD.indexOf("Submission Date");
-  const idxRusun=HEAD.indexOf("RUSUNAWA");
+  const idxDate = HEAD.indexOf("Submission Date");
+  const idxRusun = HEAD.indexOf("RUSUNAWA");
 
   return DATA.filter(r=>{
-    const txt=r.join(" ").toLowerCase();
-    const st=getStatus(r);
+    const txt = r.join(" ").toLowerCase();
+    const st = getStatus(r);
 
     if(q && !txt.includes(q)) return false;
-    if(f && st!==f) return false;
-    if(rusun && r[idxRusun]!==rusun) return false;
+    if(f && st !== f) return false;
+    if(rusun && r[idxRusun] !== rusun) return false;
 
     if(tgl){
-      const d=new Date(r[idxDate]).toISOString().split("T")[0];
-      if(d !== tgl) return false;
+      const d = new Date(r[idxDate]);
+      if(isNaN(d)) return false;
+      const formatted = d.toISOString().split("T")[0];
+      if(formatted !== tgl) return false;
     }
+
     return true;
   });
 }
@@ -471,21 +476,6 @@ function buildYear(){
   let years=[...new Set(RAW.map(r=>{const d=new Date(r[idx]);return isNaN(d)?null:d.getFullYear();}).filter(Boolean))].sort((a,b)=>b-a);
   filterTahun.innerHTML='<option value="">Semua Tahun</option>';
   years.forEach(y=>filterTahun.innerHTML+=`<option value="${y}">${y}</option>`);
-}
-
-function buildTanggal(){
-  const idx = HEAD.indexOf("Submission Date");
-  let dates = [...new Set(
-    RAW.map(r=>{
-      const d=new Date(r[idx]);
-      return isNaN(d)?null:d.toISOString().split("T")[0];
-    }).filter(Boolean)
-  )].sort().reverse();
-
-  filterTanggal.innerHTML = '<option value="">Semua Tanggal</option>';
-  dates.forEach(d=>{
-    filterTanggal.innerHTML += `<option value="${d}">${formatTanggal(d)}</option>`;
-  });
 }
 
 function applyYear(){

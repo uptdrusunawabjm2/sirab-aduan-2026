@@ -169,6 +169,16 @@ transition-all duration-300 overflow-hidden">
 </div>
 
 <script>
+function toExcelDate(val){
+  if(!val) return "";
+  const d = new Date(val);
+  if(isNaN(d)) return val;
+
+  // reset jam
+  d.setHours(0,0,0,0);
+
+  return d;
+}
 /* ==================== EXPORT XLS===================== */
 function exportXLS(){
 
@@ -191,12 +201,25 @@ function exportXLS(){
 
   // isi data
   rows.forEach(r=>{
-    let rowData = [];
-    cols.forEach(c=>{
-      rowData.push(r[c.i] || "");
-    });
-    data.push(rowData);
+  let rowData = [];
+
+  cols.forEach(c=>{
+    let val = r[c.i] || "";
+
+    // kolom tanggal
+    if(
+      c.h === "Submission Date" ||
+      c.h === "Tanggal Periksa" ||
+      c.h === "Tanggal Penanganan"
+    ){
+      val = toExcelDate(val);
+    }
+
+    rowData.push(val);
   });
+
+  data.push(rowData);
+});
 
   // buat worksheet
   const ws = XLSX.utils.aoa_to_sheet(data);

@@ -105,13 +105,6 @@
     </select>
   </div>
 
-  <!-- TANGGAL (TETAP TERSEMBUNYI DI MOBILE) -->
-  <input id="fromDate" type="date" onchange="applyFilter()"
-    class="hidden md:block py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-slate-800 border border-slate-700 text-xs md:text-sm">
-
-  <input id="toDate" type="date" onchange="applyFilter()"
-    class="hidden md:block py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-slate-800 border border-slate-700 text-xs md:text-sm">
-
   <!-- RESET -->
   <button onclick="resetFilter()"
     class="col-span-2 md:col-span-3 lg:col-span-5 py-2 px-3 md:p-3 rounded-lg md:rounded-xl bg-red-600/20 border border-red-600 text-red-400 text-xs md:text-sm hover:bg-red-600 hover:text-white">
@@ -235,8 +228,11 @@ function buildRusun(){
 }
 
 function resetFilter(){
- search.value=""; filterRusun.value=""; filterStatus.value="";
- fromDate.value=""; toDate.value=""; PAGE=1; applyFilter(false);
+  search.value="";
+  filterRusun.value="";
+  filterStatus.value="";
+  PAGE=1;
+  applyFilter(false);
 }
 
 function applyFilter(resetPage=true){
@@ -244,20 +240,13 @@ function applyFilter(resetPage=true){
  const q=search.value.toLowerCase();
  const rusun=filterRusun.value;
  const st=filterStatus.value;
- const from=fromDate.value?new Date(fromDate.value):null;
- const to=toDate.value?new Date(toDate.value):null;
-
+ 
  FILTERED = RAW.filter(r=>{
   if(q && !r.join(" ").toLowerCase().includes(q)) return false;
   if(rusun && r[IDX_RUSUN]!==rusun) return false;
   const status=getStatus(r);
   if(st && status!==st) return false;
-  if(from||to){
-   const d=new Date(r[IDX_DATE]);
-   if(from && d<from) return false;
-   if(to){const t=new Date(to);t.setHours(23,59,59,999);if(d>t) return false;}
-  }
-  return true;
+   return true;
  });
 
  hitungRekapPublik(); renderTable(); renderPages();

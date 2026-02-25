@@ -5,6 +5,7 @@
 <title>Dashboard Admin Aduan</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
 <body class="bg-slate-950 text-white min-h-screen flex">
@@ -113,16 +114,23 @@ transition-all duration-300 overflow-hidden">
     <option value="">Semua Tahun</option>
   </select>
 
-  <input id="fromDate" type="date" onchange="renderTable()"
+  <!-- DROPDOWN FILTER TANGGAL -->
+  <select id="filterTanggal" onchange="renderTable()"
     class="p-2 rounded bg-slate-800 border border-slate-700">
+    <option value="">Semua Tanggal</option>
+  </select>
 
-  <input id="toDate" type="date" onchange="renderTable()"
-    class="p-2 rounded bg-slate-800 border border-slate-700">
+  <!-- EXPORT EXCEL -->
+  <button onclick="exportXLS()"
+    class="bg-emerald-600/20 border border-emerald-600 text-emerald-400 px-3 py-2 rounded hover:bg-emerald-600 hover:text-white transition">
+    📊 Export Excel
+  </button>
 
   <button onclick="resetFilter()"
     class="sm:col-span-2 md:col-span-3 lg:col-span-6 bg-red-600/20 border border-red-600 text-red-400 px-3 py-2 rounded hover:bg-red-600 hover:text-white transition">
     🔄 Reset Filter
   </button>
+
 </div>
 
 <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-auto max-h-[65vh]">
@@ -161,6 +169,48 @@ transition-all duration-300 overflow-hidden">
 </div>
 
 <script>
+/* ==================== EXPORT XLS===================== */
+function exportXLS(){
+
+  const rows = getVisibleRows();
+
+  if(!rows.length){
+    alert("Tidak ada data untuk export");
+    return;
+  }
+
+  // ambil kolom seperti tabel (tanpa kolom tersembunyi)
+  let cols = HEAD.map((h,i)=>({h,i}))
+    .filter(x=>!HIDE_COLS.includes(x.h));
+
+  // siapkan data array-of-array
+  let data = [];
+
+  // header
+  data.push(cols.map(c=>c.h));
+
+  // isi data
+  rows.forEach(r=>{
+    let rowData = [];
+    cols.forEach(c=>{
+      rowData.push(r[c.i] || "");
+    });
+    data.push(rowData);
+  });
+
+  // buat worksheet
+  const ws = XLSX.utils.aoa_to_sheet(data);
+
+  // buat workbook
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Data Aduan");
+
+  // nama file otomatis tanggal hari ini
+  const today = new Date().toISOString().split("T")[0];
+
+  XLSX.writeFile(wb, `Data_Aduan_${today}.xlsx`);
+}
+
 /* ======================= KONFIG ======================= */
 const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
 const key = sessionStorage.getItem("adminKey");
@@ -184,9 +234,6 @@ load();
 async function load(){
   const r = await fetch(`${API}?action=all&key=${key}`);
   const j = await r.json();
-
-  if(j.users!==undefined) rUsers.textContent=j.users;
-  if(j.online!==undefined) rOnline.textContent=j.online;
   
   HEAD=j.header; RAW=j.data;
 
@@ -196,6 +243,7 @@ async function load(){
   DATA=[...RAW];
   buildYear();
   buildRusun();
+  buildTanggal();
   hitungRekap();
   renderTable();
 }
@@ -216,8 +264,7 @@ function resetFilter(){
   filterStatus.value="";
   filterTahun.value="";
   filterRusun.value="";
-  fromDate.value="";
-  toDate.value="";
+  filterTanggal.value="";   // <-- ganti ini
   DATA=[...RAW];
   hitungRekap();
   renderTable();
@@ -261,8 +308,7 @@ function getVisibleRows(){
   const q=search.value.toLowerCase();
   const f=filterStatus.value;
   const rusun=filterRusun.value;
-  const from=fromDate.value?new Date(fromDate.value):null;
-  const to=toDate.value?new Date(toDate.value):null;
+  const tgl = filterTanggal.value;
 
   const idxDate=HEAD.indexOf("Submission Date");
   const idxRusun=HEAD.indexOf("RUSUNAWA");
@@ -275,10 +321,9 @@ function getVisibleRows(){
     if(f && st!==f) return false;
     if(rusun && r[idxRusun]!==rusun) return false;
 
-    if(from||to){
-      const d=new Date(r[idxDate]);
-      if(from && d<from) return false;
-      if(to){const t=new Date(to);t.setHours(23,59,59,999);if(d>t) return false;}
+    if(tgl){
+      const d=new Date(r[idxDate]).toISOString().split("T")[0];
+      if(d !== tgl) return false;
     }
     return true;
   });
@@ -389,6 +434,21 @@ function buildYear(){
   years.forEach(y=>filterTahun.innerHTML+=`<option value="${y}">${y}</option>`);
 }
 
+function buildTanggal(){
+  const idx = HEAD.indexOf("Submission Date");
+  let dates = [...new Set(
+    RAW.map(r=>{
+      const d=new Date(r[idx]);
+      return isNaN(d)?null:d.toISOString().split("T")[0];
+    }).filter(Boolean)
+  )].sort().reverse();
+
+  filterTanggal.innerHTML = '<option value="">Semua Tanggal</option>';
+  dates.forEach(d=>{
+    filterTanggal.innerHTML += `<option value="${d}">${formatTanggal(d)}</option>`;
+  });
+}
+
 function applyYear(){
   const y=filterTahun.value;
   if(!y) DATA=[...RAW];
@@ -464,7 +524,6 @@ async function pingOnline(){
   try{
     const r = await fetch(`${API}?action=online_ping&id=${ADMIN_ID}`);
     const j = await r.json();
-    if(j.online!==undefined) rOnline.textContent=j.online;
   }catch(e){}
 }
 

@@ -917,7 +917,7 @@
 
   /* VALIDATION */
   function valid() {
-    return nama.value.trim() && hp.value.trim() && email.value.trim()
+    return nama.value.trim() && hp.value.trim()
       && rusun.value && laporan.value.trim()
       && pernyataan1.checked && pernyataan2.checked;
   }
@@ -969,7 +969,7 @@
 
       const body = {
         action: 'create', captcha,
-        nama: nama.value, hp: hp.value, email: email.value,
+        nama: nama.value, hp: hp.value,
         rusun: rusun.value, unit: unit.value, laporan: laporan.value,
         janji: janji.value, pernyataan: 'YA', files
       };

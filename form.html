@@ -2,206 +2,989 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Layanan Pengaduan</title>
+<title>Layanan Pengaduan — UPTD Rusunawa</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<script src="https://cdn.tailwindcss.com"></script>
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
 <script src="https://www.google.com/recaptcha/api.js?render=6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu"></script>
 
 <style>
-body{background:radial-gradient(circle at top,#0f172a,#020617);}
-.card{backdrop-filter:blur(12px);background:linear-gradient(145deg,rgba(30,41,59,.92),rgba(15,23,42,.92));}
-.input{width:100%;padding:14px;font-size:16px;background:#020617;border:1px solid #334155;border-radius:14px;color:white;}
-.blockbox{border:1px solid #334155;border-radius:18px;padding:14px;background:#020617;}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.flatpickr-calendar{background:#f8fafc;color:#0f172a;border:1px solid #cbd5e1;border-radius:14px;}
-.flatpickr-months, .flatpickr-weekdays{background:#e2e8f0;color:#0f172a;}
-.flatpickr-day{color:#0f172a;border-radius:8px;}
-.flatpickr-day.today{border:1px solid #0ea5e9;}
-.flatpickr-day.selected{background:#0ea5e9;color:white;}
-.flatpickr-day:hover{background:#bae6fd;}
+  :root {
+    --bg: #060c1a;
+    --surface: #0d1629;
+    --surface-2: #111e35;
+    --border: rgba(99,140,210,0.15);
+    --border-active: rgba(56,189,248,0.5);
+    --text: #e8edf7;
+    --text-muted: #6b7fa3;
+    --text-dim: #3d4f6e;
+    --accent: #38bdf8;
+    --accent-2: #818cf8;
+    --success: #34d399;
+    --warning: #fb923c;
+    --glow: rgba(56,189,248,0.08);
+    --card-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,140,210,0.1);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% -10%, rgba(56,189,248,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(129,140,248,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Subtle grid pattern */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(99,140,210,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,140,210,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    width: 100%;
+    max-width: 720px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    padding: 40px 24px 32px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo-ring {
+    width: 72px;
+    height: 72px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(129,140,248,0.12));
+    border: 1px solid rgba(56,189,248,0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .logo-ring::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 21px;
+    background: linear-gradient(135deg, rgba(56,189,248,0.3), transparent, rgba(129,140,248,0.3));
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .logo-ring:hover::before { opacity: 1; }
+
+  .logo-ring img { width: 44px; height: 44px; object-fit: contain; }
+
+  .logo-emoji { font-size: 32px; line-height: 1; }
+
+  .header h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(22px, 5vw, 30px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #e8edf7 30%, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: rgba(56,189,248,0.06);
+    border: 1px solid rgba(56,189,248,0.12);
+    border-radius: 100px;
+    padding: 4px 12px;
+    margin-top: 6px;
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: clamp(20px, 4vw, 36px);
+    box-shadow: var(--card-shadow);
+    animation: fadeUp 0.7s ease 0.1s both;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    margin-top: 28px;
+  }
+
+  .section-label:first-of-type { margin-top: 0; }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .section-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .icon-blue { background: rgba(56,189,248,0.12); }
+  .icon-purple { background: rgba(129,140,248,0.12); }
+  .icon-green { background: rgba(52,211,153,0.12); }
+  .icon-orange { background: rgba(251,146,60,0.12); }
+
+  /* ── GRID ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .span-2 { grid-column: 1 / -1; }
+
+  @media (max-width: 560px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .span-2 { grid-column: auto; }
+  }
+
+  /* ── INPUTS ── */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding-left: 2px;
+  }
+
+  .input, select.input, textarea.input {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .input::placeholder { color: var(--text-dim); }
+
+  .input:hover {
+    border-color: rgba(99,140,210,0.3);
+    background: rgba(13,22,41,0.8);
+  }
+
+  .input:focus {
+    border-color: var(--border-active);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.08);
+    background: var(--surface-2);
+  }
+
+  select.input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7fa3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  select.input option {
+    background: #0d1629;
+    color: var(--text);
+  }
+
+  textarea.input {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  /* ── DATE BLOCK ── */
+  .date-block {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .date-block-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── TIME CHIPS ── */
+  .time-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .time-chip {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .time-chip:hover {
+    border-color: rgba(56,189,248,0.4);
+    color: var(--accent);
+    background: rgba(56,189,248,0.05);
+  }
+
+  .time-chip.active {
+    border-color: var(--accent);
+    background: rgba(56,189,248,0.1);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(56,189,248,0.2);
+  }
+
+  /* ── FILE UPLOAD ── */
+  .upload-zone {
+    border: 1px dashed rgba(52,211,153,0.25);
+    border-radius: 14px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(52,211,153,0.02);
+    position: relative;
+  }
+
+  .upload-zone:hover {
+    border-color: rgba(52,211,153,0.5);
+    background: rgba(52,211,153,0.05);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .upload-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .upload-text span { color: var(--success); font-weight: 600; }
+
+  .file-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .file-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px 4px 8px;
+    background: rgba(52,211,153,0.08);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--success);
+  }
+
+  /* ── CHECKBOXES ── */
+  .check-group { display: flex; flex-direction: column; gap: 8px; }
+
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .check-item:hover { border-color: rgba(56,189,248,0.25); }
+
+  .check-item.checked {
+    border-color: rgba(56,189,248,0.3);
+    background: rgba(56,189,248,0.04);
+  }
+
+  .check-box {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--text-dim);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+
+  .check-item.checked .check-box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .check-box svg { display: none; }
+  .check-item.checked .check-box svg { display: block; }
+
+  .check-input { display: none; }
+
+  .check-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    flex: 1;
+  }
+
+  /* ── READ MORE LINK ── */
+  .read-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    transition: opacity 0.2s;
+    text-decoration: none;
+    margin-top: 4px;
+    padding-left: 2px;
+  }
+
+  .read-more:hover { opacity: 0.75; }
+
+  /* ── SUBMIT BUTTON ── */
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #0284c7, #38bdf8 60%, #818cf8);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(56,189,248,0.2);
+    margin-top: 8px;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(56,189,248,0.35);
+  }
+
+  .btn-submit:hover::before { opacity: 1; }
+  .btn-submit:active { transform: translateY(0); }
+
+  .btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ── MSG ── */
+  #msg {
+    min-height: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    padding-top: 4px;
+    transition: color 0.2s;
+  }
+
+  #msg.error { color: #f87171; }
+  #msg.success { color: var(--success); }
+  #msg.loading { color: var(--accent); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 24px 0;
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 50;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    max-width: 520px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 28px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    animation: slideUp 0.3s ease;
+  }
+
+  .modal-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-section {
+    margin-bottom: 16px;
+  }
+
+  .modal-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .modal-item {
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(99,140,210,0.07);
+  }
+
+  .modal-item:last-child { border-bottom: none; }
+  .modal-num { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+
+  .btn-close {
+    width: 100%;
+    padding: 11px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.2s;
+  }
+
+  .btn-close:hover {
+    border-color: rgba(56,189,248,0.3);
+    color: var(--accent);
+  }
+
+  /* ── FLATPICKR OVERRIDES ── */
+  .flatpickr-calendar {
+    background: #0d1629 !important;
+    border: 1px solid rgba(99,140,210,0.2) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+    font-family: 'DM Sans', sans-serif !important;
+  }
+
+  .flatpickr-months { background: transparent !important; padding: 8px 0 0; }
+  .flatpickr-month, .flatpickr-current-month { color: var(--text) !important; }
+  .flatpickr-current-month select, .flatpickr-current-month input.numInput {
+    color: var(--text) !important;
+    background: transparent !important;
+  }
+
+  .flatpickr-weekdays { background: transparent !important; }
+  span.flatpickr-weekday { color: var(--text-muted) !important; background: transparent !important; font-size: 11px !important; }
+
+  .flatpickr-day { color: var(--text-muted) !important; border-radius: 8px !important; }
+  .flatpickr-day:hover { background: rgba(56,189,248,0.12) !important; color: var(--accent) !important; border-color: transparent !important; }
+  .flatpickr-day.today { border-color: rgba(56,189,248,0.4) !important; color: var(--accent) !important; }
+  .flatpickr-day.selected, .flatpickr-day.selected:hover {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #0a0f1a !important;
+  }
+  .flatpickr-day.flatpickr-disabled { color: var(--text-dim) !important; opacity: 0.4 !important; }
+  .flatpickr-prev-month svg, .flatpickr-next-month svg { fill: var(--text-muted) !important; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  /* Stagger children */
+  .card > * { animation: fadeUp 0.5s ease both; }
+  .card > *:nth-child(1) { animation-delay: 0.15s; }
+  .card > *:nth-child(2) { animation-delay: 0.2s; }
+  .card > *:nth-child(3) { animation-delay: 0.25s; }
+  .card > *:nth-child(4) { animation-delay: 0.3s; }
+  .card > *:nth-child(5) { animation-delay: 0.35s; }
+  .card > *:nth-child(6) { animation-delay: 0.4s; }
+  .card > *:nth-child(7) { animation-delay: 0.45s; }
+  .card > *:nth-child(8) { animation-delay: 0.5s; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 </style>
 </head>
 
-<body class="text-white min-h-screen flex items-center justify-center p-3 md:p-6">
+<body>
+<div class="wrapper">
 
-<div class="w-full max-w-4xl card border border-slate-800 rounded-2xl shadow-2xl p-4 md:p-8 space-y-6">
-
-<div class="flex flex-col items-center text-center space-y-2">
-  <img src="LOGO UPTD PNG PUTIH.png" class="w-20 md:w-28">
-  <h1 class="text-xl md:text-3xl font-bold">Layanan Pengaduan</h1>
-  <p class="text-slate-400 text-xs md:text-sm">terima kasih telah menghubungi layanan pengaduan</p>
-</div>
-
-<div class="space-y-4">
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <input id="nama" placeholder="Nama Lengkap" class="input">
-  <input id="hp" placeholder="Nomor HP / WhatsApp" class="input">
-  <input id="email" placeholder="Email Aktif" class="input">
-
-  <select id="rusun" class="input">
-    <option value="">Pilih Rusunawa</option>
-    <option>Rusunawa Ganda Maghfirah</option>
-    <option>Rusunawa Teluk Kelayan</option>
-  </select>
-
-  <input id="unit" placeholder="Nomor Unit / Sarusunawa" class="input md:col-span-2">
-  <textarea id="laporan" rows="3" placeholder="Tuliskan isi laporan aduan..." class="input md:col-span-2"></textarea>
-</div>
-
-<div class="blockbox">
-  <div class="text-cyan-400 font-semibold mb-2">📅 Janji Temu (Hari kerja)</div>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-    <input id="janjiTanggal" placeholder="mm/dd/yyyy" class="input">
-    <select id="janjiJam" class="input">
-      <option value="">-- Pilih Jam --</option>
-      <option value="08.00-09.30">08.00 - 09.30</option>
-      <option value="09.30-12.00">09.30 - 12.00</option>
-      <option value="13.30-15.00">13.30 - 15.00</option>
-      <option value="15.00-16.30">15.00 - 16.30</option>
-    </select>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-ring">
+      <img src="LOGO UPTD PNG PUTIH.png" alt="Logo UPTD"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <span class="logo-emoji" style="display:none">🏢</span>
+    </div>
+    <h1>Layanan Pengaduan</h1>
+    <div class="badge">
+      <span class="badge-dot"></span>
+      UPTD Rusunawa Banjarmasin &nbsp;·&nbsp; terima kasih telah menghubungi layanan pengaduan
+    </div>
   </div>
-  <input type="hidden" id="janji">
-</div>
 
-<div class="blockbox border-dashed">
-  <div class="text-emerald-400 font-semibold mb-2">📷 Upload Foto Dokumentasi</div>
-  <input id="foto" type="file" multiple accept="image/*" class="text-sm">
-</div>
+  <!-- CARD -->
+  <div class="card">
 
-<!-- PERNYATAAN RINGKAS -->
-<div class="space-y-2 text-xs md:text-sm">
+    <!-- IDENTITAS -->
+    <div class="section-label">
+      <div class="section-icon icon-blue">👤</div>
+      Identitas Pelapor
+    </div>
 
-<label class="flex gap-2 bg-slate-900 border border-slate-700 rounded-xl p-3">
-  <input type="checkbox" id="pernyataan1">
-  <span>Saya menyatakan laporan pengaduan ini benar dan dapat dipertanggungjawabkan.</span>
-</label>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Nama Lengkap</label>
+        <input id="nama" class="input" placeholder="Masukkan nama lengkap">
+      </div>
+      <div class="field">
+        <label class="field-label">Nomor HP / WhatsApp</label>
+        <input id="hp" class="input" placeholder="08xxxxxxxxxx">
+      </div>
+      <div class="field">
+        <label class="field-label">Pilih Rusunawa</label>
+        <select id="rusun" class="input">
+          <option value="">— Pilih Rusunawa —</option>
+          <option>Rusunawa Ganda Maghfirah</option>
+          <option>Rusunawa Teluk Kelayan</option>
+        </select>
+      </div>
+      <div class="field span-2">
+        <label class="field-label">Nomor Unit / Sarusunawa</label>
+        <input id="unit" class="input" placeholder="Contoh: Blok A-205">
+      </div>
+    </div>
 
-<label class="flex gap-2 bg-slate-900 border border-slate-700 rounded-xl p-3">
-  <input type="checkbox" id="pernyataan2">
-  <span>Saya memahami dan menyetujui ketentuan pemeliharaan sarana dan prasarana rusunawa.</span>
-</label>
+    <div class="divider"></div>
 
-<button onclick="openModal()" class="text-cyan-400 underline text-left">
-📄 Baca pernyataan lengkap
-</button>
+    <!-- LAPORAN -->
+    <div class="section-label">
+      <div class="section-icon icon-purple">📝</div>
+      Isi Laporan
+    </div>
 
-</div>
+    <div class="field">
+      <label class="field-label">Detail Pengaduan</label>
+      <textarea id="laporan" class="input" rows="4"
+        placeholder="Tuliskan isi laporan aduan secara lengkap dan jelas…"></textarea>
+    </div>
 
-<button onclick="kirim()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 py-3 rounded-xl font-bold">
-📩 Kirim Aduan
-</button>
+    <div class="divider"></div>
 
-<div id="msg" class="text-center text-sm"></div>
+    <!-- JANJI TEMU -->
+    <div class="section-label">
+      <div class="section-icon icon-blue">📅</div>
+      Janji Temu
+    </div>
 
-</div>
-</div>
+    <div class="date-block">
+      <div class="date-block-title">
+        Jadwalkan kunjungan Anda <span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:4px">(hari kerja)</span>
+      </div>
+      <div class="field">
+        <label class="field-label">Tanggal Kunjungan</label>
+        <input id="janjiTanggal" class="input" placeholder="Pilih tanggal…" readonly>
+      </div>
+      <div style="margin-top:12px">
+        <div class="field-label" style="margin-bottom:8px">Pilih Waktu</div>
+        <div class="time-grid" id="timeChips">
+          <button type="button" class="time-chip" data-val="08.00-09.30">08.00 — 09.30</button>
+          <button type="button" class="time-chip" data-val="09.30-12.00">09.30 — 12.00</button>
+          <button type="button" class="time-chip" data-val="13.30-15.00">13.30 — 15.00</button>
+          <button type="button" class="time-chip" data-val="15.00-16.30">15.00 — 16.30</button>
+        </div>
+      </div>
+      <input type="hidden" id="janjiJam">
+      <input type="hidden" id="janji">
+    </div>
 
-<!-- MODAL PERNYATAAN -->
-<div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
-<div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-4 space-y-3 text-sm overflow-auto max-h-[85vh]">
+    <div class="divider"></div>
 
-<h2 class="text-lg font-bold text-cyan-400">PERNYATAAN</h2>
+    <!-- FOTO -->
+    <div class="section-label">
+      <div class="section-icon icon-green">📷</div>
+      Dokumentasi
+    </div>
 
-<p>1. Saya menyatakan laporan pengaduan ini dibuat dengan sadar dan penuh tanggung jawab berdasarkan fakta yang sebenarnya.</p>
-<p>2. Saya bersedia menerima sanksi hukum atau proses hukum apabila di kemudian hari ditemukan bahwa laporan ini tidak benar.</p>
-<p>3. Saya menyatakan tidak ada informasi yang sengaja disembunyikan atau dimanipulasi.</p>
+    <div class="upload-zone" id="uploadZone">
+      <input id="foto" type="file" multiple accept="image/*">
+      <div class="upload-icon">📁</div>
+      <div class="upload-text">
+        <span>Klik untuk memilih foto</span> atau seret ke sini<br>
+        <span style="font-size:11px;color:var(--text-dim)">JPG, PNG, WEBP hingga beberapa file</span>
+      </div>
+    </div>
+    <div class="file-preview" id="filePreview"></div>
 
-<hr class="border-slate-700">
+    <div class="divider"></div>
 
-<p class="font-semibold">Ketentuan Khusus Pemeliharaan Sarana dan Prasarana Rusunawa:</p>
-<p>1. Apabila dalam hasil pemeriksaan ditemukan kerusakan akibat kelalaian penghuni, maka perbaikan dibebankan kepada penghuni.</p>
-<p>2. Kerusakan akibat penyusutan bangunan dengan tingkat kerusakan sedang atau berat akan diperbaiki sesuai ketersediaan anggaran Pemerintah Kota Banjarmasin.</p>
+    <!-- PERNYATAAN -->
+    <div class="section-label">
+      <div class="section-icon icon-orange">✅</div>
+      Pernyataan
+    </div>
 
-<button onclick="closeModal()" class="w-full bg-blue-600 mt-3 py-2 rounded-xl font-semibold">
-Tutup
-</button>
+    <div class="check-group">
+      <label class="check-item" id="label1" onclick="toggleCheck(this,'pernyataan1')">
+        <input type="checkbox" id="pernyataan1" class="check-input">
+        <div class="check-box">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4l2.5 2.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="check-text">Saya menyatakan laporan pengaduan ini benar dan dapat dipertanggungjawabkan.</span>
+      </label>
 
-</div>
+      <label class="check-item" id="label2" onclick="toggleCheck(this,'pernyataan2')">
+        <input type="checkbox" id="pernyataan2" class="check-input">
+        <div class="check-box">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4l2.5 2.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="check-text">Saya memahami dan menyetujui ketentuan pemeliharaan sarana dan prasarana rusunawa.</span>
+      </label>
+    </div>
+
+    <a class="read-more" onclick="openModal()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Baca pernyataan lengkap
+    </a>
+
+    <!-- SUBMIT -->
+    <button id="btnSubmit" class="btn-submit" onclick="kirim()">
+      Kirim Aduan
+    </button>
+
+    <div id="msg"></div>
+
+  </div><!-- /card -->
+</div><!-- /wrapper -->
+
+<!-- MODAL -->
+<div id="modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>📄</span> Pernyataan Lengkap
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Pernyataan Pelapor</div>
+      <div class="modal-item"><span class="modal-num">1</span><span>Laporan pengaduan ini dibuat dengan sadar dan penuh tanggung jawab berdasarkan fakta yang sebenarnya.</span></div>
+      <div class="modal-item"><span class="modal-num">2</span><span>Saya bersedia menerima sanksi hukum apabila laporan ini terbukti tidak benar di kemudian hari.</span></div>
+      <div class="modal-item"><span class="modal-num">3</span><span>Tidak ada informasi yang sengaja disembunyikan atau dimanipulasi dalam laporan ini.</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Ketentuan Pemeliharaan Sarana & Prasarana</div>
+      <div class="modal-item"><span class="modal-num">1</span><span>Apabila kerusakan diakibatkan kelalaian penghuni, maka biaya perbaikan dibebankan kepada penghuni.</span></div>
+      <div class="modal-item"><span class="modal-num">2</span><span>Kerusakan akibat penyusutan bangunan tingkat sedang/berat akan diperbaiki sesuai ketersediaan anggaran Pemerintah Kota Banjarmasin.</span></div>
+    </div>
+
+    <button class="btn-close" onclick="closeModal()">Tutup</button>
+  </div>
 </div>
 
 <script>
-const API="https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
-const TRACKING="index.html";
+  const API = "https://script.google.com/macros/s/AKfycbwyiBhW4WoSehZ86jYH8CqW_k-GgTvVJ0QOkc1UT_4kXfY5cJZ0xGsMujELidj76TIcUg/exec";
+  const TRACKING = "index.html";
 
-/* DATE */
-flatpickr("#janjiTanggal", {
-  dateFormat: "m/d/Y",
-  minDate: "today",
-  disable: [d => d.getDay()==0 || d.getDay()==6]
-});
-
-janjiTanggal.onchange = buildJanji;
-janjiJam.onchange = buildJanji;
-
-function buildJanji(){
-  janji.value = janjiTanggal.value && janjiJam.value ? janjiTanggal.value+" ("+janjiJam.value+")" : "";
-}
-
-function valid(){
-  return nama.value && hp.value && email.value && rusun.value && laporan.value
-         && pernyataan1.checked && pernyataan2.checked;
-}
-
-/* MODAL */
-function openModal(){ modal.classList.remove("hidden"); modal.classList.add("flex"); }
-function closeModal(){ modal.classList.add("hidden"); modal.classList.remove("flex"); }
-
-/* KOMPRES FOTO */
-async function compressImage(file, maxSize=1280, quality=0.7){
-  return new Promise(res=>{
-    const img=new Image(), r=new FileReader();
-    r.onload=e=>{
-      img.onload=()=>{
-        let w=img.width, h=img.height;
-        if(w>h && w>maxSize){ h*=maxSize/w; w=maxSize; }
-        else if(h>maxSize){ w*=maxSize/h; h=maxSize; }
-        const c=document.createElement("canvas");
-        c.width=w; c.height=h;
-        c.getContext("2d").drawImage(img,0,0,w,h);
-        res(c.toDataURL("image/jpeg",quality));
-      };
-      img.src=e.target.result;
-    };
-    r.readAsDataURL(file);
+  /* DATE PICKER */
+  flatpickr("#janjiTanggal", {
+    dateFormat: "m/d/Y",
+    minDate: "today",
+    disable: [d => d.getDay() === 0 || d.getDay() === 6],
+    onChange: buildJanji
   });
-}
 
-async function kirim(){
-  if(!valid()){
-    msg.textContent="❗ Semua kolom wajib diisi dan kedua pernyataan harus dicentang";
-    return;
+  /* TIME CHIPS */
+  document.querySelectorAll('.time-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      document.getElementById('janjiJam').value = chip.dataset.val;
+      buildJanji();
+    });
+  });
+
+  function buildJanji() {
+    const tgl = document.getElementById('janjiTanggal').value;
+    const jam = document.getElementById('janjiJam').value;
+    document.getElementById('janji').value = tgl && jam ? `${tgl} (${jam})` : '';
   }
 
-  msg.textContent="Mengompres foto...";
+  /* CHECKBOX */
+  function toggleCheck(label, id) {
+    const cb = document.getElementById(id);
+    cb.checked = !cb.checked;
+    label.classList.toggle('checked', cb.checked);
+  }
 
-  grecaptcha.ready(async ()=>{
-    const captcha = await grecaptcha.execute("6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu",{action:"submit"});
-
-    let files=[];
-    for(let f of foto.files){
-      const compressed = await compressImage(f);
-      files.push({file:compressed.split(",")[1], mimeType:"image/jpeg"});
-    }
-
-    msg.textContent="Mengirim aduan...";
-
-    const body={action:"create",captcha,nama:nama.value,hp:hp.value,email:email.value,
-                rusun:rusun.value,unit:unit.value,laporan:laporan.value,
-                janji:janji.value,pernyataan:"YA",files};
-
-    const r=await fetch(API,{method:"POST",body:JSON.stringify(body)});
-    const j=await r.json();
-
-    if(j.success) location.href = TRACKING + "?ticket=" + j.id;
-    else msg.textContent="❌ " + (j.error || "Gagal mengirim aduan");
+  /* MODAL */
+  function openModal() { document.getElementById('modal').classList.add('open'); }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal')) closeModal();
   });
-}
+
+  /* FILE PREVIEW */
+  document.getElementById('foto').addEventListener('change', function () {
+    const preview = document.getElementById('filePreview');
+    preview.innerHTML = '';
+    Array.from(this.files).forEach(f => {
+      const tag = document.createElement('div');
+      tag.className = 'file-tag';
+      tag.innerHTML = `<span>🖼</span><span>${f.name.length > 20 ? f.name.slice(0,18)+'…' : f.name}</span>`;
+      preview.appendChild(tag);
+    });
+  });
+
+  /* VALIDATION */
+  function valid() {
+    return nama.value.trim() && hp.value.trim() && email.value.trim()
+      && rusun.value && laporan.value.trim()
+      && pernyataan1.checked && pernyataan2.checked;
+  }
+
+  function setMsg(text, type = '') {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = type;
+  }
+
+  /* COMPRESS */
+  async function compressImage(file, maxSize = 1280, quality = 0.7) {
+    return new Promise(res => {
+      const img = new Image(), r = new FileReader();
+      r.onload = e => {
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if (w > h && w > maxSize) { h *= maxSize / w; w = maxSize; }
+          else if (h > maxSize) { w *= maxSize / h; h = maxSize; }
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          res(c.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      r.readAsDataURL(file);
+    });
+  }
+
+  /* SUBMIT */
+  async function kirim() {
+    if (!valid()) {
+      setMsg('❗ Semua kolom wajib diisi dan kedua pernyataan harus dicentang.', 'error');
+      return;
+    }
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    setMsg('Mengompres foto…', 'loading');
+
+    grecaptcha.ready(async () => {
+      const captcha = await grecaptcha.execute("6Lc_PVUsAAAAADxJEg2exDV55oy7A1ANSKGY9hXu", { action: "submit" });
+      let files = [];
+      for (let f of foto.files) {
+        const compressed = await compressImage(f);
+        files.push({ file: compressed.split(',')[1], mimeType: 'image/jpeg' });
+      }
+      setMsg('Mengirim aduan…', 'loading');
+
+      const body = {
+        action: 'create', captcha,
+        nama: nama.value, hp: hp.value, email: email.value,
+        rusun: rusun.value, unit: unit.value, laporan: laporan.value,
+        janji: janji.value, pernyataan: 'YA', files
+      };
+
+      try {
+        const r = await fetch(API, { method: 'POST', body: JSON.stringify(body) });
+        const j = await r.json();
+        if (j.success) location.href = TRACKING + '?ticket=' + j.id;
+        else { setMsg('❌ ' + (j.error || 'Gagal mengirim aduan'), 'error'); btn.disabled = false; }
+      } catch {
+        setMsg('❌ Koneksi gagal, coba lagi.', 'error');
+        btn.disabled = false;
+      }
+    });
+  }
 </script>
 </body>
 </html>
